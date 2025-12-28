@@ -1,30 +1,1134 @@
-{
-  "expo": {
-    "name": "baum-mar-baum-mermo-",
-    "slug": "snack-4a53c2f6-6f0e-42b8-a92e-fa7303557cff",
-    "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
-    "ios": {
-      "supportsTablet": true
-    },
-    "android": {
-      "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+// App.js - Versão com Correção JSX Final e 100% Completa para SDK 53
+import React, { useState, useEffect } from "react";
+import {
+  SafeAreaView,
+  ScrollView,
+  View,
+  StyleSheet,
+  Dimensions,
+  Alert,
+  Platform,
+  TouchableOpacity,
+  // Image não é usado diretamente aqui, usamos PaperAvatar ou ícones.
+} from "react-native";
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { NavigationContainer, DefaultTheme as NavigationDefaultTheme, DarkTheme as NavigationDarkTheme } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {
+  Provider as PaperProvider,
+  DefaultTheme as PaperDefaultTheme,
+  DarkTheme as PaperDarkTheme,
+  Button as PaperButton,
+  Card as PaperCard,
+  TextInput as PaperTextInput,
+  Avatar as PaperAvatar,
+  Text as PaperText,
+  ActivityIndicator as PaperActivityIndicator,
+  IconButton,
+  Chip,
+  List,
+  Divider,
+  TouchableRipple,
+  Snackbar,
+  RadioButton,
+  Switch,
+  useTheme 
+} from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+
+// --- DEFINIÇÃO DE ÍCONES ---
+const AppIcons = {
+  add: "plus-circle-outline", remove: "minus-circle-outline", close: "close", back: "arrow-left",
+  settings: "cog-outline", info: "information-outline", warning: "alert-circle-outline",
+  home: "home-variant-outline", feed: "newspaper-variant-outline", groups: "account-group-outline",
+  profile: "account-circle-outline", logout: "logout", calendar: "calendar-month-outline",
+  clock: "clock-time-four-outline", notes: "note-text-outline", photo: "camera-outline",
+  star: "star-outline", starFilled: "star", heart: "heart-outline", heartFilled: "heart",
+  comment: "comment-outline", share: "share-variant-outline", trophy: "trophy-variant-outline",
+  medal: "medal-outline", target: "target", fire: "fire", dumbbell: "dumbbell",
+  weightScale: "scale-bathroom", tapeMeasure: "tape-measure", mapPin: "map-marker-outline",
+  route: "map-legend", search: "magnify", filter: "filter-variant", menuDots: "dots-vertical",
+  chevronRight: "chevron-right", chevronDown: "chevron-down", check: "check-circle-outline",
+  alert: "alert-outline", edit: "pencil-outline", delete: "trash-can-outline",
+  google: "google", apple: "apple", event: "calendar-star", list: "format-list-bulleted",
+  themeLight: "weather-sunny", themeDark: "weather-night",
+  run: "run", swimming: "swim", cycling: "bike", jiuJitsu: "karate", 
+  muayThai: "boxing-glove", 
+  musculacao: "weight-lifter", surf: "surfing", triathlon: "bike-fast", hiking: "hiking",
+  soccer: "soccer", basketball: "basketball", volleyball: "volleyball", tennis: "tennis-ball", 
+  climbing: "image-filter-hdr", 
+  kayak: "rowing", 
+  defaultSport: "run", 
+  mma: "mixed-martial-arts", 
+};
+
+// --- DIMENSÕES ---
+const screenWidth = Dimensions.get("window").width;
+
+// --- PALETAS DE CORES TEMÁTICAS ---
+const baseColors = {
+  brandPrimary: "#00695C", 
+  brandSecondary: "#00897B", 
+  brandAccentGreen: "#38A169", 
+  brandError: "#D32F2F",
+  stravaOrange: "#FC4C02", 
+};
+
+const LightThemeColors = {
+  primary: baseColors.brandPrimary, primaryDark: "#004D40", primaryLight: "#A7F3D0",
+  secondary: baseColors.brandSecondary, accent: baseColors.brandAccentGreen,
+  background: "#F3F4F6", surface: "#FFFFFF", text: "#1F2937", textSecondary: "#4B5563",
+  placeholder: "#9CA3AF", disabled: "#D1D5DB", error: baseColors.brandError,
+  success: baseColors.brandPrimary, 
+  progressFill: baseColors.brandPrimary, progressEmpty: "#B2DFDB",
+  loginScreenBackground: baseColors.brandPrimary,
+  inputBackground: "#FFFFFF", 
+};
+
+const DarkThemeColors = {
+  primary: baseColors.brandPrimary, primaryDark: "#A7F3D0", primaryLight: "#4DB6AC", 
+  secondary: baseColors.brandSecondary, accent: baseColors.brandAccentGreen,
+  background: "#121212", surface: "#1E1E1E", text: "#E0E0E0", textSecondary: "#A0A0A0",
+  placeholder: "#757575", disabled: "#424242", error: "#EF9A9A",
+  success: "#81C784", 
+  progressFill: baseColors.brandPrimary, progressEmpty: "#004D40",
+  loginScreenBackground: "#003D33", 
+  inputBackground: "#2C2C2C", 
+};
+
+// --- DADOS MOCKADOS E INICIAIS ---
+const PREDEFINED_SPORTS_LIST = [
+    { name: "Corrida", unit: "km", iconName: AppIcons.run, type: "cardio", planilha: ["Seg: 5km leve", "Qua: Tiros 6x400m", "Sex: 7km moderado"], value: 20 },
+    { name: "Musculação", unit: "treinos", iconName: AppIcons.musculacao, type: "musculacao", planilha: [ { dia: "Full Body A", exercicios: [{id:"exFS1", nome:"Agachamento", seriesBase:"3", repsBase:"8-12"}, {id:"exFS2", nome:"Supino", seriesBase:"3", repsBase:"8-12"}] } ], value: 3 },
+    { name: "Natação", unit: "m", iconName: AppIcons.swimming, type: "cardio", planilha: ["Ter: 1500m técnica", "Qui: 2000m resistência"], value: 5000 },
+    { name: "Ciclismo", unit: "km", iconName: AppIcons.cycling, type: "cardio", planilha: ["Sáb: 30km giro", "Dom: 50km longo"], value: 100 },
+    { name: "Jiu Jitsu", unit: "sessões", iconName: AppIcons.jiuJitsu, type: "luta", planilha: ["Seg: Drills de passagem", "Qua: Defesa e Quedas", "Sex: Rolas (Sparring)"], value: 3 },
+    { name: "Boxe", unit: "rounds", iconName: AppIcons.muayThai, type: "luta", planilha: ["Seg: Sombra e Saco", "Qua: Manopla", "Sex: Sparring leve"], value: 12 },
+    { name: "Muay Thai", unit: "rounds", iconName: AppIcons.muayThai, type: "luta", planilha: ["Ter: Saco e Clinch", "Qui: Sparring"], value: 12 },
+    { name: "MMA", unit: "sessões", iconName: AppIcons.mma, type: "luta", planilha: ["Seg: Striking", "Qua: Wrestling", "Sex: Grappling/Sparring"], value: 3 },
+    { name: "Futebol", unit: "partidas", iconName: AppIcons.soccer, type: "esporte_bola", planilha: ["Qua: Coletivo/Técnico", "Sáb: Jogo"], value: 2 },
+    { name: "Basquete", unit: "horas", iconName: AppIcons.basketball, type: "esporte_bola", planilha: ["Ter: Arremessos e Dribles", "Qui: Jogo 3x3 ou 5x5"], value: 4 },
+    { name: "Vôlei", unit: "sets", iconName: AppIcons.volleyball, type: "esporte_bola", planilha: ["Seg: Fundamentos", "Qua: Jogo"], value: 10 },
+    { name: "Tênis", unit: "horas", iconName: AppIcons.tennis, type: "esporte_bola", planilha: ["Ter: Saque e Voleio", "Sáb: Jogo simples/duplas"], value: 3 },
+    { name: "Hiking / Trilha", unit: "km", iconName: AppIcons.hiking, type: "outdoor", planilha: ["Sáb ou Dom: Trilha da Cachoeira (10km)"], value: 10 },
+    { name: "Escalada", unit: "vias", iconName: AppIcons.climbing, type: "outdoor", planilha: ["Fim de semana: Boulder no setor X", "Tentar via Y"], value: 5 },
+];
+const initialSportsData = [];
+const mockFriends = [ 
+  { id: "f1", name: "Lucas G.", avatarLetter: "L", online: true, status: "Correndo", dailyActivity: { running: 5, musculacao: 1 } },
+  { id: "f2", name: "Mariana S.", avatarLetter: "M", online: false, status: "Descansando", dailyActivity: { swimming: 1200 } },
+  { id: "f3", name: "Pedro A.", avatarLetter: "P", online: true, status: "Jiu Jitsu", dailyActivity: { jiuJitsu: 1, running: 2 } },
+];
+const mockGrupos = [ {id: "grp1", name: "Corredores de Sampa", iconName: AppIcons.run, membros: 125, online: 15}, {id: "grp2", name: "Gymrats BR", iconName: AppIcons.musculacao, membros: 340, online: 45},];
+const DICAS_DO_DIA_LISTA = [
+    "Beba pelo menos 2 litros de água hoje! 💧", "Durma bem para recuperar os músculos. 😴", "Alongue-se por 10 minutos. 🧘",
+    "Varie seus treinos para novos desafios. 🤸", "Consistência é a chave! 💪", "Uma pequena caminhada é melhor que nenhuma. 🚶",
+    "Escute seu corpo, respeite seus limites. 🚦", "Nutrição adequada potencializa seus resultados. 🍎", "Mantenha uma postura correta durante os exercícios. 📐",
+    "Celebre cada pequena vitória no seu progresso! 🎉", "Experimente um novo tipo de treino esta semana.", "Encontre um parceiro de treino para motivação extra.",
+    "Defina metas realistas e alcançáveis.", "Não se esqueça de aquecer antes e desaquecer depois.", "A hidratação começa antes mesmo do treino."
+];
+const MOCK_EVENTOS_FUTUROS = [
+    { id: "evt1", name: "Maratona Internacional de Goianá", date: "2025-10-26", type: "Corrida", iconName: AppIcons.run, location: "Goianá, PE", description: "Participe da maior maratona da região, com percursos de 5km, 10km, 21km e 42km." },
+    { id: "evt2", name: "Desafio de Ciclismo Serra Verde", date: "2025-11-09", type: "Ciclismo", iconName: AppIcons.cycling, location: "Serra Verde, MG", description: "Teste seus limites em um percurso desafiador com belas paisagens. Categorias amador e pro." },
+];
+const mockRotasGoiana = [ {id: "rota1", name: "Volta da Lagoa Encantada", esporte: "Corrida", iconName: AppIcons.run, distancia: "5.8 km", elevacao: "25m", terreno: "Misto", descricao: "Percurso cênico ao redor da principal lagoa de Goianá.", recorde: "23:15"}, {id: "rota2", name: "Subida do Mirante Celestial", esporte: "Ciclismo", iconName: AppIcons.cycling, distancia: "12.3 km", elevacao: "380m", terreno: "Asfalto", descricao: "Desafiadora subida com vista panorâmica da cidade.", recorde: "35:40 (bike)"}];
+
+// --- GERENCIAMENTO DE ESTADO GLOBAL COM ZUSTAND ---
+const useAppStore = create(
+  persist(
+    (set, get) => ({
+      currentUser: { name: "Atleta", avatarLetter: "A", peso: "", altura: "", metas: [], themePreference: 'light' },
+      userSports: initialSportsData, 
+      userFeedItems: [], 
+      userAchievements: [], 
+      userMedidas: [], 
+      historicoTreinos: [], 
+      appReady: false, isAuthenticated: false,
+      setThemePreference: (theme) => set(state => ({ currentUser: { ...state.currentUser, themePreference: theme }})),
+      login: (email, password) => { set({ isAuthenticated: true, currentUser: { ...get().currentUser, email: email } }); return true; },
+      logout: () => set({ isAuthenticated: false, currentUser: { name: "Atleta", avatarLetter: "A", peso: "", altura: "", metas: [], themePreference: get().currentUser.themePreference } }),
+      setAppReady: (isReady) => set({ appReady: isReady }),
+      setCurrentUserProfile: (profileData) => { set(state => ({ currentUser: { ...state.currentUser, ...profileData }})); get().showSnackbar("Perfil salvo!"); },
+      addUserSport: (sportData) => {
+        const newSport = { id: `user_sport_${Date.now()}`, ...sportData, value: sportData.value || (sportData.type === "cardio" ? 10 : (sportData.type === "luta" ? 3 : 1)), weeklyProgress: 0, lastTrained: null };
+        if (!get().userSports.find(s => s.name === newSport.name)) { set(state => ({ userSports: [newSport, ...state.userSports] })); get().showSnackbar(`${newSport.name} adicionado!`);
+        } else { get().showSnackbar(`"${newSport.name}" já existe.`); }
       },
-      "edgeToEdgeEnabled": true
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "description": "picxa\n"
-  }
+      removeUserSport: (sportId) => { Alert.alert("Remover Esporte", "Tem certeza?", [{ text: "Cancelar" }, { text: "Remover", style: "destructive", onPress: () => set(state => ({ userSports: state.userSports.filter(s => s.id !== sportId) })) }]); },
+      addTreinoToHistorico: (treinoLog) => { 
+        const newLog = { ...treinoLog, id: `log_${Date.now()}`, timestamp: new Date().toISOString() };
+        set(state => ({ historicoTreinos: [newLog, ...state.historicoTreinos.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())] }));
+        const currentAppState = get();
+        const newFeedItem = {
+            id: newLog.id, userId: "user", userName: currentAppState.currentUser.name, userAvatarLetter: currentAppState.currentUser.avatarLetter,
+            sportIconName: newLog.sportIconName || AppIcons.defaultSport, type: newLog.sportName,
+            title: `Treino de ${newLog.sportName} Concluído!`,
+            summary: `${(newLog.duration / 60).toFixed(0)} min ${newLog.distance != null ? `| ${newLog.distance} ${newLog.sportUnit || 'km'}` : ''} ${newLog.musculacaoDia ? `| ${newLog.musculacaoDia}` : ''}`,
+            imagePlaceholder: false, likes: Math.floor(Math.random() * 5), comments: Math.floor(Math.random() * 3),
+            timestamp: "Agora mesmo"
+        };
+        set(state => ({ userFeedItems: [newFeedItem, ...state.userFeedItems] }));
+        if(treinoLog.sportId) { 
+            set(state => ({
+                userSports: state.userSports.map(s => {
+                    if (s.id === treinoLog.sportId) {
+                        let newProgress = (s.weeklyProgress || 0);
+                        if (s.type === 'musculacao' || s.type === 'luta') { newProgress += 1; }
+                        else if ((s.type === 'cardio' || s.type === 'cardio_especial' || s.type === 'outdoor' || s.type === 'outdoor_aquatico') && newLog.distance != null && typeof newLog.distance === 'number') { newProgress += newLog.distance; }
+                        else { newProgress += 1; } 
+                        return { ...s, weeklyProgress: Math.min(newProgress, s.value), lastTrained: newLog.date };
+                    }
+                    return s;
+                })
+            }));
+         }
+        get().showSnackbar("Treino registrado com sucesso!");
+      },
+      updateSportPlanilha: (sportId, novaPlanilha) => { set(state => ({ userSports: state.userSports.map(sport => sport.id === sportId ? { ...sport, planilha: novaPlanilha } : sport) })); get().showSnackbar("Planilha atualizada!"); },
+      addMetaToCurrentUser: (descricaoMeta) => { if (!descricaoMeta.trim()) { Alert.alert("Erro", "Descrição da meta não pode ser vazia."); return; } const novaMeta = {id: `m_${Date.now()}`, descricao: descricaoMeta, concluida: false}; set(state => ({ currentUser: {...state.currentUser, metas: [...(state.currentUser.metas || []), novaMeta]} })); get().showSnackbar("Meta adicionada!"); },
+      toggleMetaConcluida: (metaId) => { set(state => ({ currentUser: { ...state.currentUser, metas: (state.currentUser.metas || []).map(meta => meta.id === metaId ? { ...meta, concluida: !meta.concluida } : meta ) } })); get().showSnackbar("Status da meta atualizado!"); },
+      addMedidaToUser: (medidaData) => { if (!medidaData.peso && !medidaData.cintura) { Alert.alert("Erro", "Preencha ao menos um campo de medida."); return; } const novaMedida = {...medidaData, date: new Date(medidaData.date || new Date()).toISOString().split('T')[0]}; set(state => ({ userMedidas: [novaMedida, ...state.userMedidas.sort((a,b) => new Date(b.date) - new Date(a.date))]})); get().showSnackbar("Medidas registradas!"); },
+      addConquistaToUser: (conquistaText) => { if (conquistaText && conquistaText.trim()) { const novaConquista = { id: `ach_${Date.now()}`, name: conquistaText, date: new Date().toISOString().split('T')[0], iconName: AppIcons.star, description:"Conquista adicionada manualmente!" }; set(state => ({ userAchievements: [novaConquista, ...state.userAchievements]})); get().showSnackbar("Conquista adicionada!"); } },
+      snackbarVisible: false, snackbarMessage: "",
+      showSnackbar: (message) => set({ snackbarVisible: true, snackbarMessage: message }),
+      hideSnackbar: () => set({ snackbarVisible: false, snackbarMessage: "" }),
+    }),
+    {
+      name: 'stay-in-move-app-storage-v6', 
+      storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state, error) => { if (error) { console.error("Zustand: Falha ao reidratar:", error); } else { console.log("Zustand: Reidratado."); if (state) state.setAppReady(true); } }
+    }
+  )
+);
+
+// --- COMPONENTES REUTILIZÁVEIS ---
+const ThemedProgressBar = ({ label, value, max, unit, height = 10, showPercentage = true, barColor, backgroundColor }) => {
+  const theme = useTheme(); 
+  const percentage = max > 0 ? Math.min((value / max) * 100, 100) : 0;
+  return (
+    <View style={styles.themedProgressBarContainer}>
+      <View style={styles.themedProgressBarLabelContainer}>
+        {label && <PaperText variant="labelMedium" style={{color: theme.colors.textSecondary}}>{label}: </PaperText>}
+        <PaperText variant="labelMedium" style={{color: theme.colors.text}}>
+            {value || 0} {unit} {showPercentage || (value || 0) > 0 ? `(${percentage.toFixed(0)}%)` : ''}
+        </PaperText>
+      </View>
+      <View style={[styles.themedProgressBarBackground, {height, backgroundColor: backgroundColor || theme.colors.progressEmpty , borderRadius: theme.roundness / 2}]}>
+        <View style={[styles.themedProgressBarFill, { width: `${percentage}%`, height, backgroundColor: barColor || theme.colors.progressFill, borderRadius: theme.roundness / 2 }]} />
+      </View>
+    </View>
+  );
+};
+
+const FeedCard = ({ item, onLike, onComment, onMoreOptions, navigation }) => {
+    const theme = useTheme(); 
+    return (
+        <PaperCard style={[styles.feedCardItem, {backgroundColor: theme.colors.surface}]} elevation={2} onPress={() => Alert.alert("Detalhes do Post", "Navegar para detalhes do post (a implementar).")}>
+            <PaperCard.Title
+                title={item.userName}
+                subtitle={item.timestamp}
+                titleStyle={{color: theme.colors.text}}
+                subtitleStyle={{color: theme.colors.textSecondary}}
+                left={(props) => <PaperAvatar.Text {...props} size={40} label={item.userAvatarLetter || item.userName?.charAt(0) || "U"} style={{backgroundColor: theme.colors.primaryLight}} color={theme.colors.primaryDark}/>}
+                right={(props) => <IconButton {...props} icon={item.sportIconName || AppIcons.defaultSport} iconColor={theme.colors.primary} onPress={onMoreOptions} />}
+            />
+            {item.imagePlaceholder && (
+                <PaperCard.Cover source={{ uri: `https://picsum.photos/seed/${item.id}/700/300` }} style={styles.feedCardImage} />
+            )}
+            <PaperCard.Content>
+                <PaperText variant="titleMedium" style={[styles.feedCardTitle, {color: theme.colors.text}]}>{item.title}</PaperText>
+                <PaperText variant="bodyMedium" style={[styles.feedCardSummary, {color: theme.colors.textSecondary}]}>{item.summary} {item.pace ? `| Ritmo: ${item.pace}` : ''}</PaperText>
+            </PaperCard.Content>
+            <PaperCard.Actions style={styles.feedCardActions}>
+                <PaperButton icon={AppIcons.heart} onPress={onLike} textColor={theme.colors.textSecondary}>{item.likes}</PaperButton>
+                <PaperButton icon={AppIcons.comment} onPress={onComment} textColor={theme.colors.textSecondary}>{item.comments}</PaperButton>
+                <View style={{flex:1}} />
+                <IconButton icon={AppIcons.share} iconColor={theme.colors.textSecondary} onPress={() => Alert.alert("Compartilhar", "Funcionalidade de compartilhar (a implementar).")} />
+            </PaperCard.Actions>
+        </PaperCard>
+    );
+};
+
+// --- TELAS ---
+
+function LoginScreen({ navigation }) {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const { login, showSnackbar } = useAppStore();
+  const theme = useTheme();
+
+  const handleLogin = async () => {
+    if (!email || !password) { showSnackbar("Por favor, preencha e-mail e senha."); return; }
+    setLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 1000)); 
+    const success = login(email, password);
+    setLoading(false);
+    if (!success) { showSnackbar("E-mail ou senha inválidos."); }
+  };
+
+  return (
+    <SafeAreaView style={[styles.container, styles.centerContent, {backgroundColor: theme.colors.loginScreenBackground || theme.colors.background }]}>
+      <PaperCard style={[styles.loginCard, {backgroundColor: theme.colors.surface}]}>
+        <PaperAvatar.Icon icon={AppIcons.dumbbell} size={64} style={[styles.loginLogo, {backgroundColor: theme.colors.primaryLight}]} />
+        <PaperText variant="headlineMedium" style={[styles.loginTitle, {color: theme.colors.primary}]}>Stay IN Move</PaperText>
+        <PaperText variant="titleSmall" style={[styles.loginSlogan, {color: theme.colors.textSecondary}]}>Já treinou Hoje?</PaperText>
+        <PaperTextInput placeholder="E-mail" value={email} onChangeText={setEmail} style={[styles.loginInput, {backgroundColor: theme.colors.inputBackground || theme.colors.background }]} placeholderTextColor={theme.colors.placeholder} left={<PaperTextInput.Icon icon="email-outline" color={theme.colors.textSecondary} />} mode="outlined" outlineColor={theme.colors.disabled} activeOutlineColor={theme.colors.primary} textColor={theme.colors.text} />
+        <PaperTextInput placeholder="Senha" value={password} onChangeText={setPassword} style={[styles.loginInput, {backgroundColor: theme.colors.inputBackground || theme.colors.background}]} placeholderTextColor={theme.colors.placeholder} secureTextEntry left={<PaperTextInput.Icon icon="lock-outline" color={theme.colors.textSecondary} />} mode="outlined" outlineColor={theme.colors.disabled} activeOutlineColor={theme.colors.primary} textColor={theme.colors.text} />
+        <PaperButton mode="contained" onPress={handleLogin} style={[styles.loginButton, {backgroundColor: baseColors.brandAccentGreen }]} labelStyle={{color: LightThemeColors.white}} loading={loading} disabled={loading} icon="login">Entrar</PaperButton>
+        <TouchableOpacity onPress={() => Alert.alert("Esqueci senha", "Funcionalidade a ser implementada.")}><PaperText style={[styles.loginForgotPassword, {color: theme.colors.primaryLight || theme.colors.primary}]}>Esqueceu sua senha?</PaperText></TouchableOpacity>
+        <Divider style={[styles.loginDivider, {backgroundColor: theme.colors.disabled}]} />
+        <PaperButton mode="outlined" onPress={() => { login("google@sim.com", "password"); }} style={[styles.loginSocialButton, {borderColor: theme.colors.disabled}]} icon={AppIcons.google} textColor={theme.colors.text}>Login com Google</PaperButton>
+        <PaperButton mode="outlined" onPress={() => { login("apple@sim.com", "password"); }} style={[styles.loginSocialButton, {borderColor: theme.colors.disabled}]} icon={AppIcons.apple} textColor={theme.colors.text}>Login com Apple</PaperButton>
+      </PaperCard>
+    </SafeAreaView>
+  );
 }
+
+function HomeScreen({ navigation }) {
+  const { currentUser, userSports, userFeedItems, removeUserSport, showSnackbar } = useAppStore();
+  const theme = useTheme();
+  const [dica, setDica] = useState("");
+  useEffect(() => { setDica(DICAS_DO_DIA_LISTA[Math.floor(Math.random() * DICAS_DO_DIA_LISTA.length)]); }, []);
+  const proximoTreino = userSports.length > 0 && userSports[0].planilha?.length > 0 ? (userSports[0].type === 'musculacao' && userSports[0].planilha[0]?.dia ? userSports[0].planilha[0].dia : userSports[0].planilha[0]) : "Planeje seu próximo treino!";
+  const openPlanilhaScreen = (sport) => navigation.navigate('PlanilhaDetalhe', { sportId: sport.id });
+  const openRegistroTreinoScreen = (sport) => navigation.navigate('RegistroTreino', { sportToLog: sport });
+
+  return (
+    <SafeAreaView style={[styles.container, {backgroundColor: theme.colors.background}]}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom: 20}}>
+        <View style={styles.homeHeaderContainer}>
+            <PaperText variant="headlineMedium" style={[styles.screenHeaderName, {color: theme.colors.primary}]}>Olá, {currentUser.name}!</PaperText>
+            <PaperText variant="titleMedium" style={[styles.homeSubHeader, {color: theme.colors.textSecondary}]}>Já treinou hoje?</PaperText>
+        </View>
+        <PaperCard style={[styles.homeInfoCard, {backgroundColor: theme.colors.primaryLight || LightThemeColors.primaryLight}]} elevation={1}>
+            <PaperCard.Title title="Dica do Dia" titleStyle={{color: theme.colors.primaryDark || DarkThemeColors.primary}} titleNumberOfLines={2} left={(props) => <PaperAvatar.Icon {...props} icon={AppIcons.lightbulb} style={{backgroundColor:theme.colors.accent}}/>} />
+            <PaperCard.Content><PaperText variant="bodyMedium" style={{color: theme.colors.primaryDark || DarkThemeColors.primary}}>{dica}</PaperText></PaperCard.Content>
+        </PaperCard>
+        <PaperCard style={[styles.homeInfoCard, {backgroundColor: theme.colors.surface}]} elevation={1}>
+            <PaperCard.Title title="Meu Resumo Semanal" titleStyle={{color:theme.colors.text}} left={(props) => <PaperAvatar.Icon {...props} icon={AppIcons.calendar} backgroundColor={theme.colors.surface} color={theme.colors.primary} />} />
+            <PaperCard.Content>
+                {userSports.length > 0 ? userSports.map(sport => (
+                    <ThemedProgressBar key={sport.id} label={sport.name} value={sport.weeklyProgress || 0} max={sport.value} unit={sport.unit} />
+                )) : <PaperText style={[styles.noDataMessage, {color: theme.colors.textSecondary}]}>Adicione esportes para ver seu progresso!</PaperText>}
+                {userSports.length > 0 && <Divider style={{marginVertical:10, backgroundColor: theme.colors.disabled}}/>}
+                <View style={styles.homeProximoTreinoContainer}>
+                    <MaterialCommunityIcons name={AppIcons.clock} size={18} color={theme.colors.textSecondary} style={{marginRight: 5}}/>
+                    <PaperText variant="labelLarge" style={{color: theme.colors.textSecondary}}>Próximo:</PaperText>
+                    <PaperText variant="bodyMedium" style={{marginLeft: 5, color: theme.colors.primary, fontWeight:'bold'}}>{proximoTreino}</PaperText>
+                </View>
+            </PaperCard.Content>
+        </PaperCard>
+        <View style={styles.homeSectionHeader}>
+            <PaperText variant="titleLarge" style={[styles.homeSectionTitle, {color: theme.colors.primaryDark || DarkThemeColors.primary}]}><MaterialCommunityIcons name={AppIcons.dumbbell} size={24}/> Meus Esportes</PaperText>
+            <PaperButton icon={AppIcons.add} mode="contained-tonal" onPress={() => navigation.navigate('AddSport')} compact>Novo</PaperButton>
+        </View>
+        <PaperButton icon={AppIcons.fire} mode="contained" onPress={() => openRegistroTreinoScreen(null)} style={styles.homeQuickLogButton}>Registrar Treino Rápido</PaperButton>
+        {userSports.length === 0 ? ( <PaperCard style={[styles.homeInfoCard, {backgroundColor: theme.colors.surface}]}><PaperCard.Content><PaperText style={[styles.noDataMessage, {color: theme.colors.textSecondary}]}>Nenhum esporte adicionado.</PaperText></PaperCard.Content></PaperCard>
+        ) : ( <View style={styles.homeSportsGrid}>
+            {userSports.map((sport) => (
+                <PaperCard key={sport.id} style={[styles.homeSportCard, {backgroundColor: theme.colors.surface}]} elevation={2}>
+                    <IconButton icon={AppIcons.remove} size={18} onPress={() => removeUserSport(sport.id)} style={styles.homeSportRemoveButton} iconColor={theme.colors.error}/>
+                    <TouchableRipple onPress={() => openPlanilhaScreen(sport)} style={{alignItems:'center', paddingVertical:10}}>
+                        <>
+                        <MaterialCommunityIcons name={sport.iconName || AppIcons.defaultSport} size={40} color={theme.colors.primary} />
+                        <PaperText variant="titleSmall" style={[styles.homeSportName, {color: theme.colors.primaryDark || DarkThemeColors.primary}]} numberOfLines={2} ellipsizeMode="tail">{sport.name}</PaperText>
+                        <PaperText variant="bodySmall" style={[styles.homeSportValue, {color: theme.colors.textSecondary}]}>Meta: {sport.value} {sport.unit}</PaperText>
+                        {sport.lastTrained && <PaperText variant="labelSmall" style={[styles.homeSportLastTrained, {color: theme.colors.textSecondary}]}>Último: {new Date(sport.lastTrained).toLocaleDateString('pt-BR')}</PaperText>}
+                        <ThemedProgressBar value={sport.weeklyProgress || 0} max={sport.value} unit="" height={6} showPercentage={false} />
+                        </>
+                    </TouchableRipple>
+                    <PaperCard.Actions style={[styles.homeSportCardActions, {borderTopColor:theme.colors.disabled}]}>
+                        <PaperButton onPress={() => openPlanilhaScreen(sport)} style={styles.homeSportCardButton} labelStyle={styles.homeSportCardButtonLabel} compact textColor={theme.colors.primary}>Planilha</PaperButton>
+                        <PaperButton onPress={() => openRegistroTreinoScreen(sport)} style={styles.homeSportCardButton} labelStyle={styles.homeSportCardButtonLabel} compact textColor={theme.colors.accent}>Registrar</PaperButton>
+                    </PaperCard.Actions>
+                </PaperCard>
+            ))}
+            </View>
+        )}
+        <PaperText variant="titleLarge" style={[styles.homeSectionTitle, {color: theme.colors.primaryDark || DarkThemeColors.primary}]}><MaterialCommunityIcons name={AppIcons.route} size={24}/> Rotas Populares em Goianá</PaperText>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.homeRotasScroll}>
+            {mockRotasGoiana.map(rota => (
+                <PaperCard key={rota.id} style={[styles.homeRotaCard, {backgroundColor: theme.colors.surface}]} elevation={1} onPress={()=>Alert.alert(rota.name, `${rota.descricao}\n\nDistância: ${rota.distancia}\nElevação: ${rota.elevacao}\nTerreno: ${rota.terreno}\nRecorde: ${rota.recorde}`)}>
+                    <PaperCard.Title title={rota.name} titleNumberOfLines={1} titleStyle={{color: theme.colors.text}} left={(props)=><MaterialCommunityIcons {...props} name={rota.iconName || AppIcons.route} size={28} color={baseColors.stravaOrange}/>}/>
+                    <PaperCard.Content>
+                        <PaperText variant="bodySmall" style={[styles.homeRotaDetalhe, {color: theme.colors.textSecondary}]}>{rota.distancia} | {rota.elevacao} | {rota.terreno}</PaperText>
+                        <PaperText variant="caption" style={[styles.homeRotaDescricao, {color: theme.colors.textSecondary}]} numberOfLines={3}>{rota.descricao}</PaperText>
+                    </PaperCard.Content>
+                </PaperCard>
+            ))}
+        </ScrollView>
+        <PaperText variant="titleLarge" style={[styles.homeSectionTitle, {color: theme.colors.primaryDark || DarkThemeColors.primary}]}><MaterialCommunityIcons name={AppIcons.feed} size={24}/> Feed de Atividades</PaperText>
+        {userFeedItems.length > 0 ? userFeedItems.map(item => (
+            <FeedCard key={item.id} item={item} navigation={navigation}
+                onLike={() => showSnackbar(`Curtiu o post de ${item.userName}`)}
+                onComment={() => showSnackbar(`Comentar no post de ${item.userName}`)}
+                onMoreOptions={() => showSnackbar(`Opções para o post de ${item.userName}`)} />
+        )) :
+        <PaperCard style={[styles.homeInfoCard, {backgroundColor: theme.colors.surface}]}><PaperCard.Content><PaperText style={[styles.noDataMessage, {color: theme.colors.textSecondary}]}>Nenhuma atividade no feed.</PaperText></PaperCard.Content></PaperCard>
+        }
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function AddSportScreen({ navigation }) {
+    const { addUserSport, userSports } = useAppStore();
+    const theme = useTheme();
+    const [selectedSportName, setSelectedSportName] = useState(PREDEFINED_SPORTS_LIST[0]?.name || "");
+    const [customSportName, setCustomSportName] = useState("");
+    const [isCustom, setIsCustom] = useState(false);
+
+    const handleAdd = () => {
+        let sportToAdd;
+        if (isCustom) {
+            if (!customSportName.trim()) { Alert.alert("Erro", "Por favor, insira o nome do esporte personalizado."); return; }
+            const existingSport = userSports.find(s => s.name.toLowerCase() === customSportName.trim().toLowerCase()) || PREDEFINED_SPORTS_LIST.find(s => s.name.toLowerCase() === customSportName.trim().toLowerCase());
+            if (existingSport) { Alert.alert("Esporte Duplicado", `"${customSportName.trim()}" já existe ou é um esporte pré-definido.`); return; }
+            sportToAdd = { name: customSportName.trim(), unit: "sessões", iconName: AppIcons.defaultSport, type: "geral", planilha: ["Defina sua planilha aqui!"] };
+        } else {
+            sportToAdd = PREDEFINED_SPORTS_LIST.find(s => s.name === selectedSportName);
+        }
+        if (sportToAdd) { addUserSport(sportToAdd); navigation.goBack(); } 
+        else if (!isCustom && PREDEFINED_SPORTS_LIST.length > 0) { Alert.alert("Erro", "Selecione um esporte da lista.");}
+        else if (!isCustom && PREDEFINED_SPORTS_LIST.length === 0) { Alert.alert("Info", "Nenhum esporte pré-definido. Adicione um personalizado."); setIsCustom(true); }
+    };
+
+    return (
+        <SafeAreaView style={[styles.container, {backgroundColor: theme.colors.background}]}>
+            <View style={[styles.screenHeaderBar, {backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.disabled}]}>
+                <IconButton icon={AppIcons.back} size={24} onPress={() => navigation.goBack()} iconColor={theme.colors.primary}/>
+                <PaperText variant="headlineSmall" style={[styles.screenHeaderBarTitle, {color: theme.colors.primaryDark || DarkThemeColors.primary}]}><MaterialCommunityIcons name={AppIcons.add} size={26} color={theme.colors.primaryDark || DarkThemeColors.primary}/> Adicionar Esporte</PaperText>
+            </View>
+            <ScrollView contentContainerStyle={{padding:16}}>
+                <RadioButton.Group onValueChange={newValue => setIsCustom(newValue === 'custom')} value={isCustom ? 'custom' : 'predefined'}>
+                    <View style={styles.addSportRadioContainer}>
+                        <TouchableRipple onPress={() => setIsCustom(false)}><View style={styles.radioItemContainer}><RadioButton value="predefined" color={theme.colors.primary}/><PaperText style={{color:theme.colors.text}}>Escolher da lista</PaperText></View></TouchableRipple>
+                        <TouchableRipple onPress={() => setIsCustom(true)}><View style={styles.radioItemContainer}><RadioButton value="custom" color={theme.colors.primary}/><PaperText style={{color:theme.colors.text}}>Outro (Personalizado)</PaperText></View></TouchableRipple>
+                    </View>
+                </RadioButton.Group>
+                {!isCustom ? (
+                    <View>
+                        <PaperText variant="labelLarge" style={[styles.addSportListHeader, {color: theme.colors.textSecondary}]}>Selecione um esporte:</PaperText>
+                        {PREDEFINED_SPORTS_LIST.map(sport => (
+                            <List.Item key={sport.name} title={sport.name}
+                                left={props => <MaterialCommunityIcons {...props} name={sport.iconName} size={24} color={selectedSportName === sport.name ? theme.colors.primary : theme.colors.textSecondary}/>}
+                                onPress={() => setSelectedSportName(sport.name)}
+                                style={[styles.addSportListItem, {backgroundColor: theme.colors.surface, borderColor: theme.colors.disabled}, selectedSportName === sport.name && [styles.addSportListItemSelected, {borderColor: theme.colors.primary, backgroundColor: theme.colors.primaryLight}]]}
+                                titleStyle={{color: selectedSportName === sport.name ? theme.colors.primary : theme.colors.text}}
+                            />
+                        ))}
+                    </View>
+                ) : ( <PaperTextInput label="Nome do Esporte Personalizado" value={customSportName} onChangeText={setCustomSportName} style={[styles.addSportCustomInput, {backgroundColor:theme.colors.inputBackground}]} mode="outlined" autoFocus theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/> )}
+                <PaperButton mode="contained" onPress={handleAdd} style={[styles.addSportButton, {backgroundColor: theme.colors.primary}]}>Adicionar Esporte</PaperButton>
+            </ScrollView>
+        </SafeAreaView>
+    );
+}
+
+function PlanilhaDetalheScreen({ route, navigation }) {
+    const { sportId } = route.params;
+    const theme = useTheme();
+    const sportData = useAppStore(state => state.userSports.find(s => s.id === sportId));
+    if (!sportData) return <SafeAreaView style={[styles.centerContent, {backgroundColor: theme.colors.background}]}><PaperActivityIndicator color={theme.colors.primary}/><PaperText style={{color:theme.colors.text}}>Carregando esporte...</PaperText></SafeAreaView>;
+    const { name, planilha, type, iconName } = sportData;
+
+    return (
+        <SafeAreaView style={[styles.container, {backgroundColor: theme.colors.background}]}>
+            <View style={[styles.screenHeaderBar, {backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.disabled}]}>
+                 <IconButton icon={AppIcons.back} size={24} onPress={() => navigation.goBack()} iconColor={theme.colors.primary} />
+                 <PaperText variant="headlineSmall" style={[styles.screenHeaderBarTitle, {color: theme.colors.text, marginLeft: Platform.OS === 'ios' ? -60 : -30, flexShrink:1, paddingHorizontal:5}]} numberOfLines={1} ellipsizeMode="tail">
+                     <MaterialCommunityIcons name={iconName || AppIcons.notes} size={24} color={theme.colors.primary}/> {name}
+                 </PaperText>
+                 <IconButton icon={AppIcons.edit} size={24} onPress={() => navigation.navigate('EditPlanilha', { sportId: sportId })} iconColor={theme.colors.primary}/>
+            </View>
+            <ScrollView contentContainerStyle={{padding:16}}>
+                {type === "musculacao" && Array.isArray(planilha) ? (
+                    planilha.map((treinoDia, idx) => (
+                        <PaperCard key={idx} style={[styles.planilhaMusculacaoDiaCard, {backgroundColor: theme.colors.surface, borderColor: theme.colors.primaryLight || LightThemeColors.primaryLight }]} elevation={1}>
+                            <PaperCard.Title title={treinoDia.dia} titleStyle={{color:theme.colors.primaryDark || DarkThemeColors.primary}}/>
+                            <PaperCard.Content>
+                            {treinoDia.exercicios.map((ex, exIdx) => (
+                                <View key={ex.id || exIdx} style={styles.planilhaExercicioContainer}>
+                                    <PaperText variant="titleMedium" style={[styles.planilhaExercicioNome, {color:theme.colors.primaryDark || DarkThemeColors.primary}]}>{ex.nome}</PaperText>
+                                    <PaperText style={[styles.planilhaExercicioDetalhe, {color:theme.colors.textSecondary}]}>Séries: {ex.seriesBase}  |  Reps: {ex.repsBase}</PaperText>
+                                    {ex.cargaRef && <PaperText style={[styles.planilhaExercicioDetalhe, {color:theme.colors.textSecondary}]}>Carga Ref: {ex.cargaRef}</PaperText>}
+                                    {ex.descansoBase && <PaperText style={[styles.planilhaExercicioDetalhe, {color:theme.colors.textSecondary}]}>Descanso: {ex.descansoBase}</PaperText>}
+                                    {ex.obs && <PaperText variant="bodySmall" style={[styles.planilhaExercicioObs, {color:theme.colors.textSecondary}]}>Obs: {ex.obs}</PaperText>}
+                                    {exIdx < treinoDia.exercicios.length - 1 && <Divider style={{marginVertical:8, backgroundColor: theme.colors.disabled}}/>}
+                                </View>
+                            ))}
+                            </PaperCard.Content>
+                        </PaperCard>
+                    ))
+                ) : Array.isArray(planilha) && planilha.length > 0 ? (
+                    planilha.map((item, idx) => ( <List.Item key={idx} title={`• ${item}`} titleStyle={[styles.planilhaItemSimples, {color: theme.colors.text, borderBottomColor: theme.colors.disabled}]}/> ))
+                ) : ( <PaperText style={[styles.planilhaItemSimples, {textAlign:'center', marginTop:20, color: theme.colors.textSecondary, borderBottomWidth:0}]}>Nenhuma planilha detalhada ou itens adicionados.</PaperText> )}
+            </ScrollView>
+        </SafeAreaView>
+    );
+}
+
+function EditPlanilhaScreen({ route, navigation }) {
+    const { sportId } = route.params;
+    const { userSports, updateSportPlanilha } = useAppStore();
+    const theme = useTheme();
+    const sportData = userSports.find(s => s.id === sportId);
+    const [planilhaEditada, setPlanilhaEditada] = useState(() => {
+        const currentPlanilha = sportData?.planilha;
+        if (Array.isArray(currentPlanilha)) { return JSON.parse(JSON.stringify(currentPlanilha)); }
+        return sportData?.type === 'musculacao' ? [] : [""]; 
+    });
+    if (!sportData) return <SafeAreaView style={[styles.centerContent, {backgroundColor: theme.colors.background}]}><PaperActivityIndicator color={theme.colors.primary}/><PaperText style={{color: theme.colors.text}}>Carregando...</PaperText></SafeAreaView>;
+
+    const handleSavePlanilha = () => { updateSportPlanilha(sportId, planilhaEditada); navigation.goBack(); };
+    const addPlanilhaItemGeral = () => setPlanilhaEditada(prev => [...prev, ""]);
+    const updatePlanilhaItemGeral = (text, index) => { const nova = [...planilhaEditada]; nova[index] = text; setPlanilhaEditada(nova); };
+    const removePlanilhaItemGeral = (index) => setPlanilhaEditada(prev => prev.filter((_, i) => i !== index));
+    const addDiaMusculacao = () => setPlanilhaEditada(prev => [...prev, { dia: "Novo Dia", exercicios: [{id:`ex_${Date.now()}`, nome: "", seriesBase: "", repsBase: ""}] }]);
+    const updateDiaMusculacao = (text, diaIndex) => { const nova = [...planilhaEditada]; nova[diaIndex].dia = text; setPlanilhaEditada(nova); };
+    const removeDiaMusculacao = (diaIndex) => setPlanilhaEditada(prev => prev.filter((_, i) => i !== diaIndex));
+    const addExercicioMusculacao = (diaIndex) => { const nova = [...planilhaEditada]; nova[diaIndex].exercicios.push({id:`ex_${Date.now()}`, nome: "", seriesBase: "", repsBase: ""}); setPlanilhaEditada(nova); };
+    const updateExercicioMusculacao = (diaIndex, exIndex, field, value) => { const nova = [...planilhaEditada]; nova[diaIndex].exercicios[exIndex][field] = value; setPlanilhaEditada(nova); };
+    const removeExercicioMusculacao = (diaIndex, exIndex) => { const nova = [...planilhaEditada]; nova[diaIndex].exercicios = nova[diaIndex].exercicios.filter((_, i) => i !== exIndex); setPlanilhaEditada(nova); };
+
+    return (
+        <SafeAreaView style={[styles.container, {backgroundColor: theme.colors.background}]}>
+            <View style={[styles.screenHeaderBar, {backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.disabled}]}>
+                <IconButton icon={AppIcons.back} size={24} onPress={() => navigation.goBack()} iconColor={theme.colors.primary}/>
+                <PaperText variant="headlineSmall" style={[styles.screenHeaderBarTitle, {color:theme.colors.text, marginLeft: -30}]}><MaterialCommunityIcons name={AppIcons.edit} size={26} color={theme.colors.primary}/> Editar: {sportData.name}</PaperText>
+            </View>
+            <ScrollView contentContainerStyle={{padding:16}}>
+                {sportData.type === 'musculacao' ? ( <>
+                    {planilhaEditada.map((diaTreino, diaIndex) => (
+                        <PaperCard key={`dia-${diaIndex}`} style={[styles.editPlanilhaCard, {backgroundColor:theme.colors.surface, borderColor: theme.colors.disabled}]}>
+                            <PaperCard.Title title={<PaperTextInput label="Nome do Dia" value={diaTreino.dia} onChangeText={text => updateDiaMusculacao(text, diaIndex)} mode="flat" style={{backgroundColor:'transparent', flex:1}} dense theme={{colors: {text: theme.colors.text, primary: theme.colors.primary, placeholder: theme.colors.placeholder, background: 'transparent'}}}/>}
+                                right={(props) => <IconButton {...props} icon={AppIcons.delete} onPress={() => removeDiaMusculacao(diaIndex)} iconColor={theme.colors.error} />} />
+                            <PaperCard.Content>
+                                {diaTreino.exercicios.map((ex, exIndex) => (
+                                    <View key={ex.id || `ex-${diaIndex}-${exIndex}`} style={[styles.editExercicioContainer, {borderBottomColor: theme.colors.disabled}]}>
+                                        <PaperTextInput label="Exercício" value={ex.nome} onChangeText={text => updateExercicioMusculacao(diaIndex, exIndex, 'nome', text)} mode="outlined" dense style={[styles.editInput, {backgroundColor: theme.colors.inputBackground}]} theme={{colors: {text: theme.colors.text, primary: theme.colors.primary, placeholder: theme.colors.placeholder, background: theme.colors.inputBackground}}}/>
+                                        <View style={{flexDirection:'row', justifyContent:'space-between'}}>
+                                            <PaperTextInput label="Séries" value={ex.seriesBase} onChangeText={text => updateExercicioMusculacao(diaIndex, exIndex, 'seriesBase', text)} mode="outlined" dense style={[styles.editInput, {width:'48%', backgroundColor: theme.colors.inputBackground}]} theme={{colors: {text: theme.colors.text, primary: theme.colors.primary, placeholder: theme.colors.placeholder, background: theme.colors.inputBackground}}}/>
+                                            <PaperTextInput label="Reps" value={ex.repsBase} onChangeText={text => updateExercicioMusculacao(diaIndex, exIndex, 'repsBase', text)} mode="outlined" dense style={[styles.editInput, {width:'48%', backgroundColor: theme.colors.inputBackground}]} theme={{colors: {text: theme.colors.text, primary: theme.colors.primary, placeholder: theme.colors.placeholder, background: theme.colors.inputBackground}}}/>
+                                        </View>
+                                        <PaperTextInput label="Carga Ref." value={ex.cargaRef || ""} onChangeText={text => updateExercicioMusculacao(diaIndex, exIndex, 'cargaRef', text)} mode="outlined" dense style={[styles.editInput, {backgroundColor: theme.colors.inputBackground}]} theme={{colors: {text: theme.colors.text, primary: theme.colors.primary, placeholder: theme.colors.placeholder, background: theme.colors.inputBackground}}}/>
+                                        <PaperTextInput label="Descanso" value={ex.descansoBase || ""} onChangeText={text => updateExercicioMusculacao(diaIndex, exIndex, 'descansoBase', text)} mode="outlined" dense style={[styles.editInput, {backgroundColor: theme.colors.inputBackground}]} theme={{colors: {text: theme.colors.text, primary: theme.colors.primary, placeholder: theme.colors.placeholder, background: theme.colors.inputBackground}}}/>
+                                        <PaperTextInput label="Obs" value={ex.obs || ""} onChangeText={text => updateExercicioMusculacao(diaIndex, exIndex, 'obs', text)} mode="outlined" dense multiline style={[styles.editInput, {backgroundColor: theme.colors.inputBackground}]} theme={{colors: {text: theme.colors.text, primary: theme.colors.primary, placeholder: theme.colors.placeholder, background: theme.colors.inputBackground}}}/>
+                                        <PaperButton icon={AppIcons.delete} onPress={() => removeExercicioMusculacao(diaIndex, exIndex)} textColor={theme.colors.error} compact style={{alignSelf:'flex-end', marginTop:5}}>Remover Exercício</PaperButton>
+                                        {exIndex < diaTreino.exercicios.length -1 && <Divider style={{marginVertical:10, backgroundColor: theme.colors.disabled}}/>}
+                                    </View>
+                                ))}
+                                <PaperButton icon={AppIcons.add} onPress={() => addExercicioMusculacao(diaIndex)} mode="contained-tonal" style={{marginTop:10, backgroundColor: theme.colors.primaryLight, borderColor: theme.colors.primary}} labelStyle={{color:theme.colors.primaryDark}}>Adicionar Exercício</PaperButton>
+                            </PaperCard.Content>
+                        </PaperCard>
+                    ))}
+                    <PaperButton icon={AppIcons.add} onPress={addDiaMusculacao} mode="elevated" style={{marginVertical:10, backgroundColor: theme.colors.primaryLight}}>Adicionar Novo Dia de Treino</PaperButton>
+                    </>
+                ) : (
+                    planilhaEditada.map((item, index) => (
+                        <PaperTextInput key={`item-${index}`} label={`Item ${index + 1}`} value={item} onChangeText={text => updatePlanilhaItemGeral(text, index)} mode="outlined" style={[styles.editInput, {backgroundColor: theme.colors.inputBackground}]} theme={{colors: {text: theme.colors.text, primary: theme.colors.primary, placeholder: theme.colors.placeholder, background: theme.colors.inputBackground}}}
+                            right={<PaperTextInput.Icon icon={AppIcons.delete} onPress={() => removePlanilhaItemGeral(index)} color={theme.colors.textSecondary}/>} />
+                    ))
+                )}
+                {sportData.type !== 'musculacao' && <PaperButton icon={AppIcons.add} onPress={addPlanilhaItemGeral} mode="elevated" style={{marginVertical:10, backgroundColor: theme.colors.primaryLight}}>Adicionar Item</PaperButton>}
+                <PaperButton mode="contained" onPress={handleSavePlanilha} style={{marginTop:24, paddingVertical:8, backgroundColor: themeColors.success}}>Salvar Planilha</PaperButton>
+            </ScrollView>
+        </SafeAreaView>
+    );
+}
+
+function RegistroTreinoScreen({ route, navigation }) {
+    const sportToLogInitial = route.params?.sportToLog;
+    const { addTreinoToHistorico, showSnackbar } = useAppStore();
+    const theme = useTheme();
+    const [dataTreino, setDataTreino] = useState(new Date().toISOString().split('T')[0]);
+    const [duracaoHoras, setDuracaoHoras] = useState("");
+    const [duracaoMinutos, setDuracaoMinutos] = useState("");
+    const [duracaoSegundos, setDuracaoSegundos] = useState("");
+    const [distancia, setDistancia] = useState("");
+    const [bpmMedio, setBpmMedio] = useState("");
+    const [calorias, setCalorias] = useState("");
+    const [sensacao, setSensacao] = useState(3);
+    const [notas, setNotas] = useState("");
+    const [exerciciosLog, setExerciciosLog] = useState({});
+    const [selectedMusculacaoDiaIndex, setSelectedMusculacaoDiaIndex] = useState(0);
+    const [isSaving, setIsSaving] = useState(false);
+    const sportName = sportToLogInitial?.name || "Treino Rápido";
+    const sportIcon = sportToLogInitial?.iconName || AppIcons.fire;
+    const sportUnit = sportToLogInitial?.unit || "km";
+
+    useEffect(() => {
+        setDataTreino(new Date().toISOString().split('T')[0]);
+        setDuracaoHoras(""); setDuracaoMinutos(""); setDuracaoSegundos("");
+        setDistancia(""); setBpmMedio(""); setCalorias(""); setSensacao(3); setNotas("");
+        if (sportToLogInitial?.type === 'musculacao' && sportToLogInitial.planilha?.length > 0) {
+            const diaIndexToUse = selectedMusculacaoDiaIndex < sportToLogInitial.planilha.length ? selectedMusculacaoDiaIndex : 0;
+            if (selectedMusculacaoDiaIndex !== diaIndexToUse) { setSelectedMusculacaoDiaIndex(diaIndexToUse); }
+            const diaSelecionado = sportToLogInitial.planilha[diaIndexToUse];
+            const initialLog = {};
+            (diaSelecionado?.exercicios || []).forEach(ex => { initialLog[ex.id || ex.nome] = { nome: ex.nome, seriesRealizadas: parseInt(ex.seriesBase) || 3, repsPorSerie: Array(parseInt(ex.seriesBase) || 3).fill(ex.repsBase || '8-12'), cargasPorSerie: Array(parseInt(ex.seriesBase) || 3).fill('') }; });
+            setExerciciosLog(initialLog);
+        } else { setExerciciosLog({}); if (selectedMusculacaoDiaIndex !== 0) setSelectedMusculacaoDiaIndex(0); }
+    }, [sportToLogInitial, selectedMusculacaoDiaIndex]);
+
+    const handleSave = async () => {
+        setIsSaving(true);
+        const duracaoTotalSegundos = (parseInt(duracaoHoras || 0) * 3600) + (parseInt(duracaoMinutos || 0) * 60) + (parseInt(duracaoSegundos || 0));
+        if (duracaoTotalSegundos === 0 && sportToLogInitial?.type !== 'musculacao' && Object.keys(exerciciosLog).length === 0) { showSnackbar("Por favor, insira a duração do treino ou detalhes dos exercícios."); setIsSaving(false); return; }
+        const treinoLog = {
+            sportId: sportToLogInitial?.id, sportName: sportName, sportIconName: sportIcon, sportUnit: sportUnit, date: dataTreino, duration: duracaoTotalSegundos,
+            distance: (!sportToLogInitial || sportToLogInitial?.type === 'cardio' || sportToLogInitial?.type === 'cardio_especial' || sportToLogInitial?.type === 'evento_multisport' || sportToLogInitial?.type === 'outdoor' || sportToLogInitial?.type === 'outdoor_aquatico') ? parseFloat(distancia) : null,
+            avgBpm: bpmMedio ? parseInt(bpmMedio) : null, calories: calorias ? parseInt(calorias) : null, effort: sensacao, notes: notas,
+            musculacaoLog: (sportToLogInitial?.type === 'musculacao' && Object.keys(exerciciosLog).length > 0) ? exerciciosLog : null,
+            musculacaoDia: (sportToLogInitial?.type === 'musculacao' && sportToLogInitial.planilha && currentMusculacaoPlanilhaDia) ? currentMusculacaoPlanilhaDia.dia : null,
+        };
+        addTreinoToHistorico(treinoLog);
+        await new Promise(resolve => setTimeout(resolve, 300)); 
+        setIsSaving(false);
+        navigation.goBack();
+    };
+    const updateExercicioLog = (exId, serieIndex, field, value) => { setExerciciosLog(prev => { const safeExId = exId || Object.keys(prev).find(key => prev[key].nome === exId); const currentExLog = prev[safeExId] || { nome: exId, seriesRealizadas: 0, repsPorSerie: [], cargasPorSerie: []}; const updatedEx = { ...currentExLog }; if (field === 'reps') { const newReps = [...(updatedEx.repsPorSerie || [])]; newReps[serieIndex] = value; updatedEx.repsPorSerie = newReps; } else if (field === 'carga') { const newCargas = [...(updatedEx.cargasPorSerie || [])]; newCargas[serieIndex] = value; updatedEx.cargasPorSerie = newCargas; } return { ...prev, [safeExId]: updatedEx }; }); };
+    const renderSensacaoChips = () => { const sensacoes = [{label:"😫", value:1}, {label:"🙁", value:2}, {label:"😐", value:3}, {label:"🙂", value:4}, {label:"😁", value:5}]; return ( <View style={styles.registroSensacaoContainer}> {sensacoes.map(s => ( <Chip key={s.value} selected={sensacao === s.value} onPress={() => setSensacao(s.value)} style={[styles.registroSensacaoChip, {backgroundColor: sensacao === s.value ? theme.colors.primaryLight : theme.colors.disabled}]} textStyle={{fontSize:18, color: sensacao === s.value ? theme.colors.primaryDark : theme.colors.textSecondary}} selectedColor={theme.colors.primary} > {s.label} </Chip> ))} </View> ); };
+    const currentMusculacaoPlanilhaDia = sportToLogInitial?.type === 'musculacao' && sportToLogInitial.planilha ? sportToLogInitial.planilha[selectedMusculacaoDiaIndex] : null;
+
+    return (
+        <SafeAreaView style={[styles.container, {backgroundColor: theme.colors.background}]}>
+            <View style={[styles.screenHeaderBar, {backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.disabled}]}>
+                <IconButton icon={AppIcons.back} size={24} onPress={() => navigation.goBack()} iconColor={theme.colors.primary} />
+                <PaperText variant="headlineSmall" style={[styles.screenHeaderBarTitle, {color:theme.colors.text, marginLeft: -30}]}><MaterialCommunityIcons name={sportIcon} size={26} color={theme.colors.primary}/> Registrar: {sportName}</PaperText>
+            </View>
+            <ScrollView contentContainerStyle={{padding:16}} showsVerticalScrollIndicator={false}>
+                <PaperTextInput label="Data do Treino" value={dataTreino} onChangeText={setDataTreino} style={[styles.registroInput, {backgroundColor: theme.colors.inputBackground}]} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                <PaperText variant="labelLarge" style={[styles.registroLabel, {color: theme.colors.text}]}>Duração:</PaperText>
+                <View style={styles.registroDurationContainer}>
+                    <PaperTextInput style={[styles.registroDurationInput, {backgroundColor: theme.colors.inputBackground}]} placeholder="HH" value={duracaoHoras} onChangeText={setDuracaoHoras} keyboardType="number-pad" maxLength={2} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                    <PaperText variant="headlineSmall" style={[styles.registroDurationSeparator, {color:theme.colors.textSecondary}]}>:</PaperText>
+                    <PaperTextInput style={[styles.registroDurationInput, {backgroundColor: theme.colors.inputBackground}]} placeholder="MM" value={duracaoMinutos} onChangeText={setDuracaoMinutos} keyboardType="number-pad" maxLength={2} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                    <PaperText variant="headlineSmall" style={[styles.registroDurationSeparator, {color:theme.colors.textSecondary}]}>:</PaperText>
+                    <PaperTextInput style={[styles.registroDurationInput, {backgroundColor: theme.colors.inputBackground}]} placeholder="SS" value={duracaoSegundos} onChangeText={setDuracaoSegundos} keyboardType="number-pad" maxLength={2} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                </View>
+                {(!sportToLogInitial || sportToLogInitial?.type === 'cardio' || sportToLogInitial?.type === 'cardio_especial' || sportToLogInitial?.type === 'evento_multisport' || sportToLogInitial?.type === 'outdoor' || sportToLogInitial?.type === 'outdoor_aquatico') && ( <PaperTextInput label={`Distância (${sportUnit})`} value={distancia} onChangeText={setDistancia} keyboardType="numeric" style={[styles.registroInput, {backgroundColor: theme.colors.inputBackground}]} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/> )}
+                {(!sportToLogInitial || sportToLogInitial?.type === 'cardio' || sportToLogInitial?.type === 'cardio_especial' || sportToLogInitial?.type === 'evento_multisport' || sportToLogInitial?.type === 'luta' || sportToLogInitial?.type === 'outdoor' || sportToLogInitial?.type === 'outdoor_aquatico') && ( <PaperTextInput label="BPM Médio (opcional)" value={bpmMedio} onChangeText={setBpmMedio} keyboardType="number-pad" style={[styles.registroInput, {backgroundColor: theme.colors.inputBackground}]} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/> )}
+                <PaperTextInput label="Calorias Queimadas (opcional)" value={calorias} onChangeText={setCalorias} keyboardType="number-pad" style={[styles.registroInput, {backgroundColor: theme.colors.inputBackground}]} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                <PaperText variant="labelLarge" style={[styles.registroLabel, {color: theme.colors.text}]}>Sensação de Esforço:</PaperText>
+                {renderSensacaoChips()}
+                {sportToLogInitial?.type === 'musculacao' && sportToLogInitial.planilha?.length > 0 && ( <>
+                    <PaperText variant="labelLarge" style={[styles.registroLabel, {color: theme.colors.text}]}>Selecionar Dia do Treino:</PaperText>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.registroMusculacaoDiasSelector}>
+                        {sportToLogInitial.planilha.map((dia, index) => ( <Chip key={index} selected={selectedMusculacaoDiaIndex === index} onPress={() => setSelectedMusculacaoDiaIndex(index)} style={[styles.registroDiaSelectorChip, {backgroundColor: selectedMusculacaoDiaIndex === index ? theme.colors.primary : theme.colors.disabled}]} textStyle={{color: selectedMusculacaoDiaIndex === index ? (theme.dark ? DarkThemeColors.text : LightThemeColors.white) : theme.colors.textSecondary}} > {dia.dia.length > 15 ? dia.dia.substring(0,12) + "..." : dia.dia} </Chip> ))}
+                    </ScrollView>
+                    {currentMusculacaoPlanilhaDia && currentMusculacaoPlanilhaDia.exercicios.map(ex => (
+                        <PaperCard key={ex.id || ex.nome} style={[styles.registroExercicioCard, {backgroundColor: theme.colors.surface}]} elevation={1}>
+                            <PaperCard.Title title={ex.nome} titleStyle={{color: theme.colors.text}}/>
+                            <PaperCard.Content>
+                            {[...Array(exerciciosLog[ex.id || ex.nome]?.seriesRealizadas || 0)].map((_, serieIdx) => (
+                                <View key={serieIdx} style={styles.registroSerieRow}>
+                                    <PaperText style={[styles.registroSerieLabel, {color: theme.colors.textSecondary}]}>Série {serieIdx + 1}:</PaperText>
+                                    <PaperTextInput style={[styles.registroSerieInput, {backgroundColor: theme.colors.inputBackground}]} placeholder="Reps" defaultValue={exerciciosLog[ex.id || ex.nome]?.repsPorSerie[serieIdx] || ''} onChangeText={val => updateExercicioLog(ex.id || ex.nome, serieIdx, 'reps', val)} keyboardType="default" dense mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                                    <PaperTextInput style={[styles.registroSerieInput, {backgroundColor: theme.colors.inputBackground}]} placeholder="Carga" defaultValue={exerciciosLog[ex.id || ex.nome]?.cargasPorSerie[serieIdx] || ''} onChangeText={val => updateExercicioLog(ex.id || ex.nome, serieIdx, 'carga', val)} keyboardType="default" dense mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                                </View>
+                            ))}
+                            </PaperCard.Content>
+                        </PaperCard>
+                    ))}
+                </> )}
+                <PaperTextInput label="Notas Adicionais (opcional)" value={notas} onChangeText={setNotas} multiline numberOfLines={3} style={[styles.registroInput, {height: 100, backgroundColor: theme.colors.inputBackground}]} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                <PaperButton icon={AppIcons.photo} mode="outlined" onPress={() => Alert.alert("Adicionar Foto", "Funcionalidade de upload de foto (a implementar).")} style={[styles.registroAddPhotoButton, {borderColor: theme.colors.primary}]} labelStyle={{color: theme.colors.primary}}> Adicionar Foto </PaperButton>
+                <PaperButton mode="contained" onPress={handleSave} style={[styles.registroSaveButton, {backgroundColor: theme.colors.accent}]} icon={AppIcons.fire} loading={isSaving} disabled={isSaving} labelStyle={{color: theme.colors.textContrastOnAccent || DarkThemeColors.text}}> Salvar Treino </PaperButton>
+            </ScrollView>
+        </SafeAreaView>
+    );
+}
+
+function SocialScreen({ navigation }) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("amigos"); 
+  const theme = useTheme();
+  const friendsData = mockFriends; 
+  const gruposData = mockGrupos; 
+  const filteredFriends = friendsData.filter(f => f.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredGrupos = gruposData.filter(g => g.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  const PONTOS_POR_ATIVIDADE = { running: 10, musculacao: 50, swimming: 0.02, jiuJitsu: 60, cycling: 3, default: 20 };
+  const calcularPontuacaoAmigo = (amigo) => { let pontuacao = 0; if (amigo.dailyActivity) { for (const atividade in amigo.dailyActivity) { const valor = amigo.dailyActivity[atividade]; const peso = PONTOS_POR_ATIVIDADE[atividade] || PONTOS_POR_ATIVIDADE.default; pontuacao += valor * peso; } } return Math.round(pontuacao); };
+  const rankingAmigos = friendsData.map(amigo => ({ ...amigo, pontuacao: calcularPontuacaoAmigo(amigo) })).sort((a, b) => b.pontuacao - a.pontuacao);
+
+  const renderAmigos = () => (
+    <>
+      <PaperButton icon={AppIcons.add} mode="contained-tonal" onPress={() => Alert.alert("Adicionar Amigo", "Funcionalidade a implementar.")} style={[styles.socialAddButton, {backgroundColor: theme.colors.primaryLight, borderColor:theme.colors.primary}]} labelStyle={{color: theme.colors.primaryDark}}> Adicionar Amigo </PaperButton>
+      {filteredFriends.length > 0 ? ( filteredFriends.map(friend => ( <List.Item key={friend.id} title={friend.name} description={friend.online ? `Online: ${friend.status}` : 'Offline'} titleStyle={{color:theme.colors.text}} descriptionStyle={{color:theme.colors.textSecondary}} left={props => <PaperAvatar.Text {...props} size={40} label={friend.avatarLetter} style={{backgroundColor: friend.online ? theme.colors.primaryLight : theme.colors.disabled}} color={friend.online ? theme.colors.primaryDark : theme.colors.textSecondary}/>} right={props => friend.online ? <MaterialCommunityIcons {...props} name="circle" color={theme.colors.success} size={12} style={{alignSelf:'center'}}/> : null} onPress={() => navigation.navigate('FriendDetail', { friendData: friend })} style={[styles.socialListItem, {backgroundColor:theme.colors.surface}]} /> )) ) : ( <PaperText style={[styles.noDataMessage, {color:theme.colors.textSecondary}]}>Nenhum amigo encontrado.</PaperText> )}
+    </>
+  );
+  const renderGrupos = () => (
+    <>
+      <PaperButton icon={AppIcons.add} mode="contained-tonal" onPress={() => Alert.alert("Criar Grupo", "Funcionalidade a implementar.")} style={[styles.socialAddButton, {backgroundColor: theme.colors.primaryLight, borderColor:theme.colors.primary}]} labelStyle={{color: theme.colors.primaryDark}}> Criar Grupo </PaperButton>
+      {filteredGrupos.length > 0 ? ( filteredGrupos.map(grupo => ( <List.Item key={grupo.id} title={grupo.name} description={`${grupo.membros} membros • ${grupo.online} online`} titleStyle={{color:theme.colors.text}} descriptionStyle={{color:theme.colors.textSecondary}} left={props => <PaperAvatar.Icon {...props} icon={grupo.iconName || AppIcons.groups} style={{backgroundColor:theme.colors.secondary}}/>} right={props => <IconButton {...props} icon={AppIcons.chevronRight} iconColor={theme.colors.textSecondary}/>} onPress={() => Alert.alert("Grupo", `Detalhes do grupo ${grupo.name} (a implementar).`)} style={[styles.socialListItem, {backgroundColor:theme.colors.surface}]} /> )) ) : ( <PaperText style={[styles.noDataMessage, {color:theme.colors.textSecondary}]}>Nenhum grupo encontrado.</PaperText> )}
+    </>
+  );
+  const renderRanking = () => (
+    <>
+      <PaperText variant="titleMedium" style={{margin:16, textAlign:'center', color: theme.colors.primaryDark || DarkThemeColors.primary}}>Ranking Semanal de Atividades</PaperText>
+      {rankingAmigos.length > 0 ? rankingAmigos.map((amigo, index) => ( <List.Item key={amigo.id} title={`${index + 1}. ${amigo.name}`} description={`${amigo.pontuacao} pontos`} titleStyle={{color:theme.colors.text}} descriptionStyle={{color:theme.colors.textSecondary}} left={props => <PaperAvatar.Text {...props} size={40} label={amigo.avatarLetter} style={{backgroundColor: theme.colors.primaryLight}} color={theme.colors.primaryDark}/>} right={props => <MaterialCommunityIcons {...props} name={AppIcons.trophy} size={24} color={theme.colors.accent} style={{alignSelf:'center'}}/>} style={[styles.socialListItem, {backgroundColor:theme.colors.surface}]} /> )) : <PaperText style={[styles.noDataMessage, {color:theme.colors.textSecondary}]}>Nenhum dado para exibir o ranking.</PaperText>}
+    </>
+  );
+
+  return (
+    <SafeAreaView style={[styles.container, {backgroundColor: theme.colors.background}]}>
+      <PaperText variant="headlineMedium" style={[styles.screenHeader, {color: theme.colors.primary}]}><MaterialCommunityIcons name={AppIcons.groups} size={30} color={theme.colors.primary}/> Social</PaperText>
+      <View style={[styles.socialTabContainer, {backgroundColor: theme.colors.disabled}]}>
+        <PaperButton mode={activeTab === 'amigos' ? "contained" : "text"} onPress={() => setActiveTab('amigos')} style={styles.socialTabButton} buttonColor={activeTab === 'amigos' ? theme.colors.primary : undefined} textColor={activeTab === 'amigos' ? (theme.dark ? DarkThemeColors.text : LightThemeColors.white) : theme.colors.textSecondary}>Amigos</PaperButton>
+        <PaperButton mode={activeTab === 'ranking' ? "contained" : "text"} onPress={() => setActiveTab('ranking')} style={styles.socialTabButton} buttonColor={activeTab === 'ranking' ? theme.colors.primary : undefined} textColor={activeTab === 'ranking' ? (theme.dark ? DarkThemeColors.text : LightThemeColors.white) : theme.colors.textSecondary}>Ranking</PaperButton>
+        <PaperButton mode={activeTab === 'grupos' ? "contained" : "text"} onPress={() => setActiveTab('grupos')} style={styles.socialTabButton} buttonColor={activeTab === 'grupos' ? theme.colors.primary : undefined} textColor={activeTab === 'grupos' ? (theme.dark ? DarkThemeColors.text : LightThemeColors.white) : theme.colors.textSecondary}>Grupos</PaperButton>
+      </View>
+      <PaperTextInput label={`Buscar ${activeTab === 'amigos' ? 'Amigos' : activeTab === 'ranking' ? 'Amigos no Ranking' : 'Grupos'}...`} value={searchQuery} onChangeText={setSearchQuery} style={[styles.socialSearchInput, {backgroundColor:theme.colors.surface}]} left={<PaperTextInput.Icon icon={AppIcons.search} color={theme.colors.textSecondary}/>} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.surface}}}/>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:8, paddingBottom: 20}}>
+        {activeTab === 'amigos' && renderAmigos()}
+        {activeTab === 'ranking' && renderRanking()}
+        {activeTab === 'grupos' && renderGrupos()}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function FriendDetailScreen({ route, navigation }) {
+  const { friendData } = route.params;
+  const theme = useTheme();
+  if (!friendData) return <SafeAreaView style={[styles.centerContent, {backgroundColor: theme.colors.background}]}><PaperText style={{color:theme.colors.text}}>Erro: Amigo não encontrado.</PaperText></SafeAreaView>;
+  const maxRunning = 20; const maxSwimming = 3000; const maxMusculacao = 5;
+
+  return (
+    <SafeAreaView style={[styles.container, {backgroundColor: theme.colors.background}]}>
+        <IconButton icon={AppIcons.back} size={24} onPress={() => navigation.goBack()} style={styles.detailBackButton} iconColor={theme.colors.primary}/>
+        <ScrollView showsVerticalScrollIndicator={false}>
+            <View style={[styles.detailHeader, {backgroundColor:theme.colors.surface, borderBottomColor: theme.colors.disabled}]}>
+                <PaperAvatar.Text size={80} label={friendData.avatarLetter || "U"} style={[styles.detailAvatar, {backgroundColor: theme.colors.primaryLight}]} />
+                <PaperText variant="headlineSmall" style={[styles.detailName, {color: theme.colors.primaryDark || DarkThemeColors.primary}]}>{friendData.name}</PaperText>
+                <Chip icon={friendData.online ? "check-circle" : "minus-circle"} textStyle={{color: friendData.online ? theme.colors.success : theme.colors.textSecondary}} style={{backgroundColor: theme.colors.surface}}> {friendData.status} </Chip>
+            </View>
+            <PaperCard style={[styles.detailCard, {backgroundColor: theme.colors.surface}]} elevation={1}>
+                <PaperCard.Title title="Atividades Recentes (Exemplo)" titleStyle={{color:theme.colors.text}} left={(props) => <PaperAvatar.Icon {...props} icon={AppIcons.fire} backgroundColor={theme.colors.surface} color={theme.colors.primary}/>} />
+                <PaperCard.Content>
+                    <ThemedProgressBar label="Corrida" value={friendData.dailyActivity?.running || 0} max={maxRunning} unit="km"/>
+                    <ThemedProgressBar label="Natação" value={friendData.dailyActivity?.swimming || 0} max={maxSwimming} unit="m"/>
+                    <ThemedProgressBar label="Musculação" value={friendData.dailyActivity?.musculacao || 0} max={maxMusculacao} unit="treinos"/>
+                </PaperCard.Content>
+            </PaperCard>
+            <PaperCard style={[styles.detailCard, {backgroundColor: theme.colors.surface}]} elevation={1}>
+                <PaperCard.Title title="Rankings Comparativos (Exemplo)" titleStyle={{color:theme.colors.text}} left={(props) => <PaperAvatar.Icon {...props} icon={AppIcons.trophy} backgroundColor={theme.colors.surface} color={theme.colors.primary}/>} />
+                <PaperCard.Content>
+                    <List.Item title={`Posição Geral: #${mockFriends.findIndex(f => f.id === friendData.id) + 1}`} titleStyle={{color:theme.colors.text}} left={props => <List.Icon {...props} icon="numeric" color={theme.colors.textSecondary}/>} />
+                    <List.Item title="Performance em Corrida: Top 30%" titleStyle={{color:theme.colors.text}} left={props => <List.Icon {...props} icon={AppIcons.run} color={theme.colors.textSecondary}/>} />
+                    <List.Item title="Volume de Musculação: Acima da média" titleStyle={{color:theme.colors.text}} left={props => <List.Icon {...props} icon={AppIcons.musculacao} color={theme.colors.textSecondary}/>} />
+                </PaperCard.Content>
+            </PaperCard>
+            <PaperButton mode="contained" onPress={() => Alert.alert("Chat", `Iniciar chat com ${friendData.name} (a implementar).`)} style={{margin:16, backgroundColor:theme.colors.primary}} icon={AppIcons.comment}> Conversar com {friendData.name} </PaperButton>
+        </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function MyProfileScreen({ navigation }) {
+  const { currentUser, userAchievements, userMedidas, setCurrentUserProfile, setThemePreference, addMetaToCurrentUser, toggleMetaConcluida, addMedidaToUser, addConquistaToUser, logout, showSnackbar } = useAppStore();
+  const theme = useTheme();
+  const [nome, setNome] = useState(currentUser.name);
+  const [avatarLetra, setAvatarLetra] = useState(currentUser.avatarLetter || "A");
+  const [peso, setPeso] = useState(currentUser.peso || "");
+  const [altura, setAltura] = useState(currentUser.altura || "");
+  const [novaMetaDesc, setNovaMetaDesc] = useState("");
+  const [novaMedidaPeso, setNovaMedidaPeso] = useState("");
+  const [novaMedidaCintura, setNovaMedidaCintura] = useState("");
+  const isDark = currentUser.themePreference === 'dark';
+  const onToggleTheme = () => { const newTheme = isDark ? 'light' : 'dark'; setThemePreference(newTheme); };
+  const handleSalvarPerfilLocal = () => { setCurrentUserProfile({ name: nome, avatarLetter: avatarLetra, peso, altura }); };
+  const handleAddMetaLocal = () => { if (novaMetaDesc.trim()) { addMetaToCurrentUser(novaMetaDesc); setNovaMetaDesc(""); } else { showSnackbar("Descreva sua nova meta."); } };
+  const handleAddMedidaLocal = () => { if (novaMedidaPeso.trim() || novaMedidaCintura.trim()) { addMedidaToUser({ date: new Date().toISOString().split('T')[0], peso: novaMedidaPeso ? `${novaMedidaPeso}kg` : undefined, cintura: novaMedidaCintura ? `${novaMedidaCintura}cm` : undefined, }); setNovaMedidaPeso(""); setNovaMedidaCintura(""); } else { showSnackbar("Preencha pelo menos um campo de medida."); }};
+  const handleAddConquistaLocal = () => { Alert.prompt( "Nova Conquista", "Descreva sua conquista:", [{text: "Cancelar", style: "cancel"}, {text: "Adicionar", onPress: (text) => { if (text && text.trim()) { addConquistaToUser(text); }}}], 'plain-text' ); };
+
+  return (
+    <SafeAreaView style={[styles.container, {backgroundColor: theme.colors.background}]}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom: 20, paddingTop:10}}>
+            <View style={styles.profileHeader}>
+                <TouchableRipple onPress={() => Alert.alert("Editar Foto", "Funcionalidade de upload de foto a ser implementada.")} borderless={true} style={{borderRadius:45}}>
+                    <PaperAvatar.Text size={80} label={currentUser.avatarLetter || avatarLetra} style={[styles.profileAvatar, {backgroundColor: theme.colors.primaryLight}]} />
+                </TouchableRipple>
+                <PaperText variant="headlineSmall" style={[styles.profileName, {color: theme.colors.text}]}>{currentUser.name}</PaperText>
+            </View>
+            <List.Section title="Preferências" titleStyle={{color: theme.colors.textSecondary}}>
+                <List.Item
+                    title="Tema Escuro"
+                    titleStyle={{color: theme.colors.text}} style={[styles.profileListItem, {backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.disabled}]}
+                    left={props => <List.Icon {...props} icon={isDark ? AppIcons.themeDark : AppIcons.themeLight} color={theme.colors.text}/>}
+                    right={() => <Switch value={isDark} onValueChange={onToggleTheme} color={theme.colors.primary} />}
+                    onPress={onToggleTheme} />
+            </List.Section>
+            <List.Section title="Minha Conta" titleStyle={{color: theme.colors.textSecondary}}>
+                <List.Item title="Histórico de Treinos" titleStyle={{color: theme.colors.text}} style={[styles.profileListItem, {backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.disabled}]} left={props => <List.Icon {...props} icon={AppIcons.history} color={theme.colors.textSecondary}/>} right={props => <List.Icon {...props} icon={AppIcons.chevronRight} color={theme.colors.textSecondary}/>} onPress={() => navigation.navigate('HistoricoTreinos')} />
+                <List.Item title="Editar Informações Pessoais" titleStyle={{color: theme.colors.text}} style={[styles.profileListItem, {backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.disabled}]} left={props => <List.Icon {...props} icon={AppIcons.edit} color={theme.colors.textSecondary}/>} onPress={() => { showSnackbar("Use os campos abaixo para editar e salvar."); }} />
+            </List.Section>
+            <PaperCard style={[styles.profileCard, {backgroundColor: theme.colors.surface}]} elevation={1}>
+                <PaperCard.Title title="Informações Pessoais" titleStyle={{color: theme.colors.text}} left={(props) => <PaperAvatar.Icon {...props} icon={AppIcons.settings} backgroundColor={theme.colors.surface} color={theme.colors.primary}/>} />
+                <PaperCard.Content>
+                    <PaperTextInput label="Nome" value={nome} onChangeText={setNome} style={[styles.profileInput, {backgroundColor:theme.colors.inputBackground}]} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                    <PaperTextInput label="Letra do Avatar (Ex: J)" value={avatarLetra} onChangeText={text => setAvatarLetra(text.toUpperCase().charAt(0))} style={[styles.profileInput, {backgroundColor:theme.colors.inputBackground}]} mode="outlined" maxLength={1} theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                    <PaperTextInput label="Peso (kg)" value={peso} onChangeText={setPeso} keyboardType="numeric" style={[styles.profileInput, {backgroundColor:theme.colors.inputBackground}]} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                    <PaperTextInput label="Altura (cm)" value={altura} onChangeText={setAltura} keyboardType="numeric" style={[styles.profileInput, {backgroundColor:theme.colors.inputBackground}]} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                    <PaperButton mode="contained" onPress={handleSalvarPerfilLocal} style={{marginTop:10, backgroundColor: theme.colors.primary}}>Salvar Informações</PaperButton>
+                </PaperCard.Content>
+            </PaperCard>
+            <PaperCard style={[styles.profileCard, {backgroundColor: theme.colors.surface}]} elevation={1}>
+                <PaperCard.Title title="Minhas Metas" titleStyle={{color: theme.colors.text}} left={(props) => <PaperAvatar.Icon {...props} icon={AppIcons.target} backgroundColor={theme.colors.surface} color={theme.colors.primary}/>} />
+                <PaperCard.Content>
+                    {(currentUser.metas || []).length > 0 ? (currentUser.metas || []).map(meta => <TouchableRipple key={meta.id} onPress={() => toggleMetaConcluida(meta.id)}> <List.Item title={meta.descricao} titleStyle={{color: meta.concluida ? theme.colors.textSecondary : theme.colors.text, textDecorationLine: meta.concluida ? 'line-through' : 'none'}} left={props => <List.Icon {...props} icon={meta.concluida ? AppIcons.check : AppIcons.target} color={meta.concluida ? theme.colors.success : theme.colors.textSecondary}/>} /> </TouchableRipple> ) : <PaperText style={[styles.noDataMessage, {color:theme.colors.textSecondary}]}>Nenhuma meta definida.</PaperText>}
+                    <PaperTextInput label="Nova meta (ex: Correr 10km)" value={novaMetaDesc} onChangeText={setNovaMetaDesc} style={[styles.profileInput, {backgroundColor:theme.colors.inputBackground}]} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                    <PaperButton mode="contained-tonal" onPress={handleAddMetaLocal} style={{marginTop:5, backgroundColor: theme.colors.primaryLight}} labelStyle={{color:theme.colors.primaryDark}} icon={AppIcons.add}>Adicionar Meta</PaperButton>
+                </PaperCard.Content>
+            </PaperCard>
+            <PaperCard style={[styles.profileCard, {backgroundColor: theme.colors.surface}]} elevation={1}>
+                <PaperCard.Title title="Minhas Medidas" titleStyle={{color: theme.colors.text}} left={(props) => <PaperAvatar.Icon {...props} icon={AppIcons.tapeMeasure} backgroundColor={theme.colors.surface} color={theme.colors.primary}/>} />
+                <PaperCard.Content>
+                    {userMedidas.slice(0,3).map((med, idx) => <List.Item key={idx} title={`${new Date(med.date).toLocaleDateString('pt-BR')}: ${med.peso ? `Peso ${med.peso}` : ''} ${med.cintura ? `Cintura ${med.cintura}` : ''}`} titleStyle={{color:theme.colors.text}} left={props => <List.Icon {...props} icon={AppIcons.weightScale} color={theme.colors.textSecondary}/>} /> )}
+                    {userMedidas.length === 0 && <PaperText style={[styles.noDataMessage, {color:theme.colors.textSecondary}]}>Nenhuma medida registrada.</PaperText>}
+                    <PaperTextInput label="Peso atual (kg)" value={novaMedidaPeso} onChangeText={setNovaMedidaPeso} keyboardType="numeric" style={[styles.profileInput, {backgroundColor:theme.colors.inputBackground}]} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                    <PaperTextInput label="Cintura atual (cm)" value={novaMedidaCintura} onChangeText={setNovaMedidaCintura} keyboardType="numeric" style={[styles.profileInput, {backgroundColor:theme.colors.inputBackground}]} mode="outlined" theme={{colors:{primary: theme.colors.primary, placeholder: theme.colors.placeholder, text: theme.colors.text, background: theme.colors.inputBackground}}}/>
+                    <PaperButton mode="contained-tonal" onPress={handleAddMedidaLocal} style={{marginTop:5, backgroundColor: theme.colors.primaryLight}} labelStyle={{color:theme.colors.primaryDark}} icon={AppIcons.add}>Registrar Medidas Hoje</PaperButton>
+                </PaperCard.Content>
+            </PaperCard>
+            <PaperCard style={[styles.profileCard, {backgroundColor: theme.colors.surface}]} elevation={1}>
+                <PaperCard.Title title="Minhas Conquistas" titleStyle={{color: theme.colors.text}} left={(props) => <PaperAvatar.Icon {...props} icon={AppIcons.trophy} backgroundColor={theme.colors.surface} color={theme.colors.primary}/>} />
+                <PaperCard.Content>
+                    {userAchievements.length > 0 ? userAchievements.map(ach => <List.Item key={ach.id} title={`${ach.name} (${new Date(ach.date).toLocaleDateString('pt-BR')})`} description={ach.description} titleStyle={{color:theme.colors.text}} descriptionStyle={{color:theme.colors.textSecondary}} left={props => <List.Icon {...props} icon={ach.iconName || AppIcons.medal} color={theme.colors.accent}/>} /> ) : <PaperText style={[styles.noDataMessage, {color:theme.colors.textSecondary}]}>Nenhuma conquista registrada.</PaperText>}
+                    <PaperButton mode="contained-tonal" onPress={handleAddConquistaLocal} style={{marginTop:5, backgroundColor: theme.colors.primaryLight}} labelStyle={{color:theme.colors.primaryDark}} icon={AppIcons.add}>Adicionar Conquista</PaperButton>
+                </PaperCard.Content>
+            </PaperCard>
+            <PaperButton mode="outlined" onPress={logout} style={[styles.profileLogoutButton, {borderColor: theme.colors.error}]} icon={AppIcons.logout} textColor={theme.colors.error}> Sair (Logout) </PaperButton>
+        </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function HistoricoTreinosScreen({ navigation }) {
+  const { historicoTreinos } = useAppStore();
+  const theme = useTheme();
+  const selectTreino = (treinoLog) => navigation.navigate('DetalheTreino', { treinoLogData: treinoLog });
+  return (
+     <SafeAreaView style={[styles.container, {backgroundColor: theme.colors.background}]}>
+        <View style={[styles.screenHeaderBar, {backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.disabled}]}>
+            <IconButton icon={AppIcons.back} size={24} onPress={() => navigation.goBack()} iconColor={theme.colors.primary} />
+            <PaperText variant="headlineSmall" style={[styles.screenHeaderBarTitle, {color: theme.colors.text}]}><MaterialCommunityIcons name={AppIcons.history} size={26} color={theme.colors.primary}/> Histórico</PaperText>
+        </View>
+        {historicoTreinos.length === 0 ? ( <View style={styles.centerContent}><PaperText style={[styles.noDataMessage, {color: theme.colors.textSecondary}]}>Sem treinos registrados.</PaperText></View>
+        ) : (
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingHorizontal:8, paddingTop:10, paddingBottom:20}}>
+            {historicoTreinos.map(treino => (
+                <List.Item key={treino.id} title={treino.sportName}
+                    description={`${new Date(treino.date).toLocaleDateString('pt-BR', {weekday: 'short', day:'2-digit', month:'short'})} - ${(treino.duration / 60).toFixed(0)} min ${treino.distance != null ? `| ${treino.distance} ${treino.sportUnit || 'km'}` : ''}`}
+                    titleStyle={{color: theme.colors.text}} descriptionStyle={{color: theme.colors.textSecondary}}
+                    left={props => <List.Icon {...props} icon={treino.sportIconName || AppIcons.defaultSport} color={theme.colors.primary}/>}
+                    right={props => <List.Icon {...props} icon={AppIcons.chevronRight} color={theme.colors.textSecondary} />}
+                    onPress={() => selectTreino(treino)}
+                    style={[styles.historicoListItem, {backgroundColor: theme.colors.surface}]} />
+            ))}
+        </ScrollView>
+        )}
+    </SafeAreaView>
+  );
+}
+
+function DetalheTreinoScreen({ route, navigation }) {
+  const { treinoLogData } = route.params;
+  const theme = useTheme();
+  if (!treinoLogData) return <SafeAreaView style={[styles.centerContent, {backgroundColor: theme.colors.background}]}><PaperText style={{color: theme.colors.text}}>Erro: Treino não encontrado.</PaperText></SafeAreaView>;
+  const formatDuration = (totalSeconds) => { if (totalSeconds == null || totalSeconds === 0) return "N/A"; const h = Math.floor(totalSeconds / 3600); const m = Math.floor((totalSeconds % 3600) / 60); const s = totalSeconds % 60; return `${h > 0 ? h + 'h ' : ''}${m > 0 ? m + 'min ' : ''}${s > 0 ? s + 's' : ''}`.trim() || "0s"; };
+  const sensacaoEmojis = ["", "😫 Muito Difícil", "🙁 Difícil", "😐 Moderado", "🙂 Leve", "😁 Muito Leve"];
+
+    return (
+        <SafeAreaView style={[styles.container, {backgroundColor: theme.colors.background}]}>
+             <View style={[styles.screenHeaderBar, {backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.disabled}]}>
+                <IconButton icon={AppIcons.back} size={24} onPress={() => navigation.goBack()} iconColor={theme.colors.primary}/>
+                <PaperText variant="headlineSmall" style={[styles.screenHeaderBarTitle, {color: theme.colors.text, marginLeft: -30}]}><MaterialCommunityIcons name={treinoLogData.sportIconName || AppIcons.defaultSport} size={26} color={theme.colors.primary}/> Detalhes</PaperText>
+            </View>
+            <ScrollView contentContainerStyle={{padding:16}} showsVerticalScrollIndicator={false}>
+                <PaperCard style={[styles.detailCard, {backgroundColor: theme.colors.surface}]} elevation={1}>
+                    <PaperCard.Title title="Resumo Geral" titleStyle={{color: theme.colors.text}}/>
+                    <PaperCard.Content>
+                        <List.Item titleStyle={{color: theme.colors.text}} descriptionStyle={{color: theme.colors.textSecondary}} title={`Esporte: ${treinoLogData.sportName}`} left={props => <List.Icon {...props} icon={treinoLogData.sportIconName || AppIcons.defaultSport} color={theme.colors.textSecondary}/>}/>
+                        <List.Item titleStyle={{color: theme.colors.text}} descriptionStyle={{color: theme.colors.textSecondary}} title={`Data: ${new Date(treinoLogData.date).toLocaleDateString('pt-BR')}`} left={props => <List.Icon {...props} icon={AppIcons.calendar} color={theme.colors.textSecondary}/>}/>
+                        <List.Item titleStyle={{color: theme.colors.text}} descriptionStyle={{color: theme.colors.textSecondary}} title={`Duração: ${formatDuration(treinoLogData.duration)}`} left={props => <List.Icon {...props} icon={AppIcons.clock} color={theme.colors.textSecondary}/>}/>
+                        {treinoLogData.distance != null && <List.Item titleStyle={{color: theme.colors.text}} descriptionStyle={{color: theme.colors.textSecondary}} title={`Distância: ${treinoLogData.distance} ${treinoLogData.sportUnit || 'km'}`} left={props => <List.Icon {...props} icon={AppIcons.route} color={theme.colors.textSecondary}/>}/>}
+                        {treinoLogData.avgBpm != null && <List.Item titleStyle={{color: theme.colors.text}} descriptionStyle={{color: theme.colors.textSecondary}} title={`BPM Médio: ${treinoLogData.avgBpm}`} left={props => <List.Icon {...props} icon={AppIcons.heart} color={theme.colors.textSecondary}/>}/>}
+                        {treinoLogData.calories != null && <List.Item titleStyle={{color: theme.colors.text}} descriptionStyle={{color: theme.colors.textSecondary}} title={`Calorias: ${treinoLogData.calories} kcal`} left={props => <List.Icon {...props} icon={AppIcons.fire} color={theme.colors.textSecondary}/>}/>}
+                        <List.Item titleStyle={{color: theme.colors.text}} descriptionStyle={{color: theme.colors.textSecondary}} title={`Sensação: ${sensacaoEmojis[treinoLogData.effort || 0]}`} left={props => <List.Icon {...props} icon="emoticon-happy-outline" color={theme.colors.textSecondary}/>}/>
+                        {treinoLogData.notes && <List.Item titleStyle={{color: theme.colors.text}} descriptionStyle={{color: theme.colors.textSecondary}} title={`Notas: ${treinoLogData.notes}`} descriptionNumberOfLines={5} left={props => <List.Icon {...props} icon={AppIcons.notes} color={theme.colors.textSecondary}/>}/>}
+                    </PaperCard.Content>
+                </PaperCard>
+                {treinoLogData.musculacaoLog && (
+                    <PaperCard style={[styles.detailCard, {backgroundColor: theme.colors.surface}]} elevation={1}>
+                        <PaperCard.Title title={treinoLogData.musculacaoDia || "Exercícios Realizados"} titleStyle={{color: theme.colors.text}}/>
+                        <PaperCard.Content>
+                        {Object.entries(treinoLogData.musculacaoLog).map(([exId, log]) => (
+                            <View key={exId} style={styles.detalheExercicioMuscContainer}>
+                                <PaperText variant="titleMedium" style={[styles.detalheExercicioNome, {color: theme.colors.primaryDark || DarkThemeColors.primary}]}>{log.nome || "Exercício"}</PaperText>
+                                {(log.repsPorSerie || []).map((reps, serieIdx) => ( <PaperText key={serieIdx} style={[styles.detalheExercicioSerie, {color: theme.colors.textSecondary}]}> Série {serieIdx + 1}: {reps} reps com {(log.cargasPorSerie || [])[serieIdx] || "N/A"} </PaperText> ))}
+                                {exId !== Object.keys(treinoLogData.musculacaoLog).pop() && <Divider style={{marginVertical:8, backgroundColor: theme.colors.disabled}}/>}
+                            </View>
+                        ))}
+                        </PaperCard.Content>
+                    </PaperCard>
+                )}
+                <PaperButton mode="outlined" onPress={() => navigation.goBack()} style={{marginTop: 20, borderColor: theme.colors.primary}} labelStyle={{color: theme.colors.primary}}>Fechar</PaperButton>
+            </ScrollView>
+        </SafeAreaView>
+    );
+}
+
+function EventosScreen({ navigation }) {
+    const { showSnackbar } = useAppStore();
+    const theme = useTheme();
+    const [eventos] = useState(MOCK_EVENTOS_FUTUROS);
+
+    return (
+        <SafeAreaView style={[styles.container, {backgroundColor: theme.colors.background}]}>
+            <PaperText variant="headlineMedium" style={[styles.screenHeader, {color: theme.colors.primary}]}><MaterialCommunityIcons name={AppIcons.event} size={30} color={theme.colors.primary}/> Eventos Futuros</PaperText>
+            <ScrollView contentContainerStyle={{paddingHorizontal:8, paddingTop:10, paddingBottom:20}}>
+                {eventos.length === 0 ? ( <PaperText style={[styles.noDataMessage, {color: theme.colors.textSecondary}]}>Nenhum evento futuro cadastrado.</PaperText>
+                ) : (
+                    eventos.map(evento => (
+                        <PaperCard key={evento.id} style={[styles.eventCard, {backgroundColor: theme.colors.surface}]} elevation={2}>
+                            <PaperCard.Title title={evento.name} subtitle={`${evento.type} - ${new Date(evento.date).toLocaleDateString('pt-BR', {day:'2-digit', month:'short', year:'numeric'})}`}
+                                titleStyle={{color: theme.colors.text}} subtitleStyle={{color: theme.colors.textSecondary}}
+                                left={props => <PaperAvatar.Icon {...props} icon={evento.iconName || AppIcons.event} style={{backgroundColor:theme.colors.secondary}}/>} />
+                            <PaperCard.Content>
+                                <PaperText variant="bodyMedium" style={{marginBottom:5, color: theme.colors.text}}><MaterialCommunityIcons name={AppIcons.mapPin} size={16} color={theme.colors.textSecondary}/> {evento.location}</PaperText>
+                                <PaperText variant="bodySmall" style={{marginBottom:10, color: theme.colors.textSecondary}}>{evento.description}</PaperText>
+                            </PaperCard.Content>
+                            <PaperCard.Actions>
+                                <PaperButton onPress={() => showSnackbar(`Interesse registrado em ${evento.name}!`)} textColor={theme.colors.primary}>Registrar Interesse</PaperButton>
+                                <PaperButton onPress={() => Alert.alert("Detalhes", evento.description)} textColor={theme.colors.primary}>Saber Mais</PaperButton>
+                            </PaperCard.Actions>
+                        </PaperCard>
+                    ))
+                )}
+            </ScrollView>
+        </SafeAreaView>
+    );
+}
+
+// --- NAVEGAÇÃO ---
+const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator();
+
+function AppTabs() {
+  const { currentUser } = useAppStore();
+  const theme = useTheme();
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textSecondary,
+        tabBarStyle: { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.disabled, height: Platform.OS === 'ios' ? 85 : 60, paddingTop:5 },
+        tabBarLabelStyle: { fontSize: 10, paddingBottom: Platform.OS === 'ios' ? 0 : 5, fontWeight:'500' },
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+          if (route.name === 'Home') iconName = focused ? AppIcons.home.replace('-outline','') : AppIcons.home;
+          else if (route.name === 'Social') iconName = focused ? AppIcons.groups.replace('-outline','') : AppIcons.groups;
+          else if (route.name === 'Eventos') iconName = focused ? AppIcons.event.replace('-star','') : AppIcons.event; 
+          else if (route.name === 'Perfil') return <PaperAvatar.Text size={size} label={currentUser.avatarLetter || "U"} style={{backgroundColor: focused ? theme.colors.primaryLight : theme.colors.disabled, marginBottom:2}} color={focused ? theme.colors.primaryDark : theme.colors.textSecondary }/>;
+          return <MaterialCommunityIcons name={iconName} size={size} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Social" component={SocialScreen} />
+      <Tab.Screen name="Eventos" component={EventosScreen} /> 
+      <Tab.Screen name="Perfil" component={MyProfileScreen} />
+    </Tab.Navigator>
+  );
+}
+
+function AppNavigator() {
+  const { isAuthenticated, appReady } = useAppStore();
+  const theme = useTheme(); 
+
+  if (!appReady) { 
+    return (
+      <View style={[styles.loadingContainer, {backgroundColor: theme.colors.background}]}>
+        <PaperActivityIndicator animating={true} color={theme.colors.primary} size="large"/>
+        <PaperText variant="titleMedium" style={[styles.loadingText, {color: theme.colors.textSecondary}]}>Carregando Stay In Move...</PaperText>
+        <MaterialCommunityIcons name={AppIcons.dumbbell} size={50} color={theme.colors.primary} style={{marginTop:20}}/>
+      </View>
+    );
+  }
+  return (
+    <Stack.Navigator screenOptions={{ headerShown: false }}>
+      {!isAuthenticated ? (
+        <Stack.Screen name="Login" component={LoginScreen} />
+      ) : (
+        <>
+          <Stack.Screen name="AppTabs" component={AppTabs} />
+          <Stack.Screen name="PlanilhaDetalhe" component={PlanilhaDetalheScreen} />
+          <Stack.Screen name="EditPlanilha" component={EditPlanilhaScreen} />
+          <Stack.Screen name="RegistroTreino" component={RegistroTreinoScreen} />
+          <Stack.Screen name="AddSport" component={AddSportScreen} />
+          <Stack.Screen name="FriendDetail" component={FriendDetailScreen} />
+          <Stack.Screen name="HistoricoTreinos" component={HistoricoTreinosScreen} />
+          <Stack.Screen name="DetalheTreino" component={DetalheTreinoScreen} />
+        </>
+      )}
+    </Stack.Navigator>
+  );
+}
+
+const getCombinedTheme = (isDark) => {
+  const currentColors = isDark ? DarkThemeColors : LightThemeColors;
+  const baseNavigationTheme = isDark ? NavigationDarkTheme : NavigationDefaultTheme;
+  const basePaperTheme = isDark ? PaperDarkTheme : PaperDefaultTheme;
+  return {
+    ...basePaperTheme, ...baseNavigationTheme, dark: isDark,
+    colors: {
+      ...basePaperTheme.colors, ...baseNavigationTheme.colors,
+      primary: currentColors.primary, accent: currentColors.accent, 
+      background: currentColors.background, surface: currentColors.surface,
+      text: currentColors.text, textSecondary: currentColors.textSecondary, 
+      placeholder: currentColors.placeholder, disabled: currentColors.disabled,
+      error: currentColors.error, success: currentColors.success, warning: baseColors.brandWarning, 
+      card: currentColors.surface, border: currentColors.disabled,
+      notification: currentColors.accent,
+      loginScreenBackground: currentColors.loginScreenBackground, 
+      primaryLight: currentColors.primaryLight, primaryDark: currentColors.primaryDark,
+      progressFill: currentColors.progressFill, progressEmpty: currentColors.progressEmpty,
+      white: LightThemeColors.white, black: LightThemeColors.black, 
+      inputBackground: currentColors.inputBackground,
+      textContrastOnAccent: isDark ? LightThemeColors.text : DarkThemeColors.text, 
+      onSurface: currentColors.text, // Adicionado para Snackbar
+    },
+    roundness: 8,
+  };
+};
+
+export default function App() {
+  const themePreference = useAppStore(state => state.currentUser.themePreference);
+  const isDark = themePreference === 'dark';
+  const activeTheme = getCombinedTheme(isDark);
+  const { snackbarVisible, snackbarMessage, hideSnackbar } = useAppStore();
+
+  return (
+    <PaperProvider theme={activeTheme}>
+      <NavigationContainer theme={activeTheme}>
+        <AppNavigator />
+        <Snackbar visible={snackbarVisible} onDismiss={hideSnackbar} action={{ label: 'Fechar', onPress: hideSnackbar, textColor: activeTheme.colors.primary }} duration={Snackbar.DURATION_SHORT} 
+          style={{backgroundColor: activeTheme.colors.surface}} 
+        >
+          <PaperText style={{color: activeTheme.colors.onSurface || activeTheme.colors.text}}>{snackbarMessage}</PaperText> 
+        </Snackbar>
+      </NavigationContainer>
+    </PaperProvider>
+  );
+}
+
+// --- ESTILOS ---
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+  centerContent: { flex: 1, justifyContent: "center", alignItems: "center", padding: 16 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  loadingText: { marginTop: 15, fontSize: 16 },
+  screenHeaderName: { textAlign:'center', fontWeight:'bold', fontSize:24 },
+  screenHeaderBar: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 5, paddingVertical: Platform.OS === 'ios' ? 5:10, elevation:1},
+  screenHeaderBarTitle: { flex: 1, textAlign: 'center', fontSize: 20, fontWeight: 'bold' }, 
+  noDataMessage: { textAlign: 'center', fontStyle:'italic', marginVertical: 20, paddingHorizontal: 20, fontSize: 15 },
+  themedProgressBarContainer: { marginBottom: 12, paddingHorizontal:4 }, 
+  themedProgressBarLabelContainer: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }, 
+  themedProgressBarBackground: { overflow: 'hidden', borderRadius: 50, height: 10 }, 
+  themedProgressBarFill: { borderRadius: 50, height: 10 }, 
+  feedCardItem: { marginHorizontal: 16, marginBottom: 16, borderRadius: 8, elevation: 2 }, 
+  feedCardImage: { height: screenWidth * 0.55, marginBottom:10, borderTopLeftRadius: 8, borderTopRightRadius: 8}, 
+  feedCardTitle: { marginBottom: 5, fontWeight: 'bold', fontSize: 17 }, 
+  feedCardSummary: { marginBottom: 10, lineHeight: 21, fontSize: 14 }, 
+  feedCardActions: { justifyContent:'flex-start', paddingTop:4, paddingBottom:4 }, 
+  loginCard: { padding: 30, width: "90%", maxWidth: 400, alignItems: "center", borderRadius:16 }, 
+  loginLogo: { marginBottom:25 }, 
+  loginTitle: { marginBottom: 8, fontWeight:'bold', fontSize: 28}, 
+  loginSlogan: { marginBottom: 30, fontSize: 16 }, 
+  loginInput: { width: '100%', marginBottom: 18 }, 
+  loginButton: { width: '100%', paddingVertical: 10, marginTop:12, marginBottom: 18, borderRadius: 12 }, 
+  loginForgotPassword: { fontSize: 14, fontWeight: "500", marginBottom:18},
+  loginDivider: { width: '80%', marginVertical:20 },
+  loginSocialButton: { width: '100%', marginBottom: 12, paddingVertical:8, borderRadius: 12 },
+  homeHeaderContainer: { paddingHorizontal:16, marginTop:Platform.OS === 'ios' ? 15 : 25, marginBottom:15, alignItems:'center'},
+  homeSubHeader: { textAlign:'center', marginTop:4, fontSize:18, fontStyle: 'italic' }, 
+  homeInfoCard: { marginHorizontal:16, marginBottom: 20, borderRadius: 8}, 
+  homeProximoTreinoContainer: { flexDirection:'row', alignItems:'center', marginTop: 8, paddingTop: 8, borderTopWidth: 1 }, 
+  homeSectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15, paddingHorizontal: 16, marginTop:25 }, 
+  homeSectionTitle: { fontSize: 20, fontWeight:'bold' }, 
+  homeSectionTitleMain: { marginTop: 25, marginBottom:10, paddingHorizontal: 16, fontSize: 20, fontWeight:'bold' },
+  homeQuickLogButton: { marginHorizontal: 16, marginBottom: 25, paddingVertical:10, borderRadius: 12, backgroundColor: baseColors.brandSecondary },
+  homeSportsGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-around", paddingHorizontal: 8, marginTop: 10,},
+  homeSportCard: { width: (screenWidth / 2) - 24, marginBottom: 16, marginHorizontal:4, borderRadius: 8, elevation: 3}, 
+  homeSportRemoveButton: { position: 'absolute', top: -10, right: -10, zIndex: 10, borderRadius:15}, 
+  homeSportName: { textAlign: 'center', marginBottom: 4, paddingHorizontal: 2, fontWeight:'bold', fontSize: 14, lineHeight: 18 },
+  homeSportValue: { textAlign: 'center', marginBottom: 6, fontSize: 12 },
+  homeSportLastTrained: { textAlign: 'center', marginBottom: 8, fontStyle: 'italic', fontSize:11 },
+  homeSportCardActions: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center', borderTopWidth:1, paddingVertical: 2, paddingHorizontal: 0, flexWrap:'wrap'}, 
+  homeSportCardButton: { marginHorizontal: 1, paddingHorizontal:1 }, 
+  homeSportCardButtonLabel: { fontSize: 10, marginHorizontal:0, paddingHorizontal:0, letterSpacing: -0.5},
+  homeRotasScroll: { paddingLeft: 16, paddingBottom: 15, marginBottom:15 },
+  homeRotaCard: { width: screenWidth * 0.8, marginRight: 12, minHeight:160, borderRadius: 8, elevation: 2},
+  homeRotaDetalhe: { marginBottom: 4, fontSize: 13 },
+  homeRotaDescricao: { flexGrow:1, marginBottom: 8, lineHeight:19, fontSize: 14 },
+  addSportRadioContainer: { flexDirection:'row', justifyContent:'space-around', marginBottom:20, marginTop:10},
+  radioItemContainer: {flexDirection: 'row', alignItems: 'center', paddingHorizontal: 8, paddingVertical: 4}, 
+  addSportListItem: { marginBottom:10, borderRadius:8, borderWidth:1.5, paddingVertical: 8},
+  addSportListItemSelected: { borderWidth: 2},
+  addSportListHeader: {marginBottom:8, marginTop: 10, fontSize: 16, fontWeight: '500'}, 
+  addSportCustomInput: {marginTop:16 }, 
+  addSportButton: {marginTop:24, paddingVertical:8}, 
+  planilhaMusculacaoDiaCard: {marginBottom:15, borderRadius: 8, elevation: 1, borderWidth:1}, 
+  planilhaExercicioContainer: { marginBottom: 12, paddingBottom: 10, },
+  planilhaExercicioNome: { fontWeight: 'bold', marginBottom: 5, fontSize: 16 },
+  planilhaExercicioDetalhe: { lineHeight: 22, marginLeft: 8, fontSize: 14 },
+  planilhaExercicioObs: { fontStyle: 'italic', marginLeft: 8, marginTop: 4, fontSize: 13 },
+  planilhaItemSimples: {fontSize:15, paddingVertical:8, borderBottomWidth:1},
+  editPlanilhaCard: {marginBottom:15, borderRadius:8, elevation: 1},
+  editExercicioContainer: {padding:10, borderBottomWidth:1 },
+  editInput: {marginBottom:8},
+  registroInput: { marginBottom: 16 },
+  registroLabel: { marginBottom: 8, marginTop: 10, fontWeight:'500', fontSize: 15 },
+  registroDurationContainer: {flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16},
+  registroDurationInput: { textAlign: 'center', flex:1, marginHorizontal:3},
+  registroDurationSeparator: {fontSize: 26, marginHorizontal: 6, alignSelf:'center', paddingTop:5},
+  registroSensacaoContainer: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 18, marginTop:8 },
+  registroSensacaoChip: { minWidth: screenWidth / 7, justifyContent:'center', alignItems:'center', borderWidth:0 },
+  registroMusculacaoDiasSelector: { paddingVertical:8, marginBottom: 18 },
+  registroDiaSelectorChip: { marginHorizontal:5, paddingHorizontal: 4, height: 35}, 
+  registroExercicioCard: { marginBottom:15, padding: 12, borderRadius: 8, elevation: 1},
+  registroSerieRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10, justifyContent:'space-between'},
+  registroSerieLabel: { marginRight: 8, fontSize: 14},
+  registroSerieInput: { width: '38%', textAlign:'center', height: 40}, 
+  registroAddPhotoButton: { marginTop: 18, paddingVertical: 6, borderRadius: 12 },
+  registroSaveButton: { marginTop:24, paddingVertical:10, borderRadius: 12 },
+  socialTabContainer: { flexDirection: 'row', marginHorizontal:16, marginBottom:12, borderRadius: 8, padding:4},
+  socialTabButton: { flex: 1, borderWidth:0, elevation:0, marginHorizontal:1},
+  socialSearchInput: { marginHorizontal: 16, marginBottom:18},
+  socialAddButton: {marginHorizontal:8, marginBottom:18 },
+  socialListItem: {borderRadius:8, marginBottom:10, elevation:2, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 3 },
+  detailBackButton: {position:'absolute', top: Platform.OS === 'ios' ? 45 : 15, left:5, zIndex:1 },
+  detailHeader: { alignItems: "center", paddingVertical: 25, borderBottomLeftRadius:25, borderBottomRightRadius:25, marginBottom:18, elevation:3}, 
+  detailAvatar: { marginBottom: 12, width: 90, height: 90, borderRadius: 45}, 
+  detailName: { marginBottom: 8, fontWeight:'bold', fontSize: 22 },
+  detailCard: { marginHorizontal:16, marginBottom:18, borderRadius: 8},
+  profileHeader: { alignItems: "center", paddingVertical: 20, marginBottom:15},
+  profileAvatar: { marginBottom: 12, width:90, height:90, borderRadius:45},
+  profileName: { fontWeight:'bold', fontSize:22 },
+  profileListItem: {borderBottomWidth:0.5, paddingVertical:4},
+  profileCard: { marginHorizontal:16, marginBottom:18, borderRadius: 8},
+  profileLogoutButton: {marginHorizontal:16, marginTop:25, marginBottom:35, paddingVertical:6, borderRadius: 12 },
+  historicoListItem: {borderRadius:8, marginBottom:10, elevation:2, marginHorizontal:8, shadowColor: "#000", shadowOpacity: 0.05, shadowRadius: 3 },
+  detalheExercicioMuscContainer: { marginBottom: 12, paddingBottom: 10, },
+  detalheExercicioNome: { fontWeight: 'bold', marginBottom: 4, fontSize: 16 },
+  detalheExercicioSerie: { marginLeft: 10, fontSize: 14, lineHeight: 20 },
+  eventCard: { marginHorizontal:8, marginBottom:16, borderRadius: 8, elevation: 2},
+});
